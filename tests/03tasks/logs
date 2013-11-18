@@ -1,0 +1,1717 @@
+param_list1 :
+known_param_list1 :
+O1
+T1
+C1
+D1
+O2
+T2
+C2
+D2
+O3
+T3
+C3
+D3
+number of automata 4
+0 automaton act1
+--------------------------------------
+Automaton name "act1"
+synclabs :
+r1
+state name : wait_for_offset1
+invariant : 1p1-1O1<=0
+rates : 
+edges : 
+==>wait_for_period1
+1p1-1O1=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3
+state name : wait_for_period1
+invariant : 1p1-1T1<=0
+rates : 
+edges : 
+==>wait_for_period1
+1p1-1T1=0
+sync label: r1
+updates: 
+p1'= 10
+Initial states : wait_for_offset1
+bad states : 
+--------------------------------------
+1 automaton act2
+--------------------------------------
+Automaton name "act2"
+synclabs :
+r2
+state name : wait_for_offset2
+invariant : 1p2-1O2<=0
+rates : 
+edges : 
+==>wait_for_period2
+1p2-1O2=0
+sync label: r2
+updates: 
+p2'= 10
+state name : wait_for_period2
+invariant : 1p2-1T2<=0
+rates : 
+edges : 
+==>wait_for_period2
+1p2-1T2=0
+sync label: r2
+updates: 
+p2'= 10
+Initial states : wait_for_offset2
+bad states : 
+--------------------------------------
+2 automaton act3
+--------------------------------------
+Automaton name "act3"
+synclabs :
+r3
+state name : wait_for_offset3
+invariant : 1p3-1O3<=0
+rates : 
+edges : 
+==>wait_for_period3
+1p3-1O3=0
+sync label: r3
+updates: 
+p3'= 10
+state name : wait_for_period3
+invariant : 1p3-1T3<=0
+rates : 
+edges : 
+==>wait_for_period3
+1p3-1T3=0
+sync label: r3
+updates: 
+p3'= 10
+Initial states : wait_for_offset3
+bad states : 
+--------------------------------------
+3 automaton sched
+--------------------------------------
+Automaton name "sched"
+synclabs :
+r1
+r2
+r3
+empty
+state name : idle
+invariant : 
+rates : 
+edges : 
+==>x1R
+
+sync label: r1
+updates: 
+c1'= 10, d1'= 10
+==>x2R
+
+sync label: r2
+updates: 
+c2'= 10, d2'= 10
+==>x3R
+
+sync label: r3
+updates: 
+c3'= 10, d3'= 10
+state name : x3R
+invariant : 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+==>x1R3W
+1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+c1'= 10, d1'= 10
+==>x2R3W
+1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+c2'= 10, d2'= 10
+state name : x2R
+invariant : 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>x1R2W
+1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+c1'= 10, d1'= 10
+==>x2R3W
+1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+c3'= 10, d3'= 10
+state name : x2R3W
+invariant : 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>error
+1d3-1D3=0
+sync label: 
+updates: 
+==>x1R2W3W
+1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+c1'= 10, d1'= 10
+state name : x1R
+invariant : 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>x1R2W
+1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+c2'= 10, d2'= 10
+==>x1R3W
+1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+c3'= 10, d3'= 10
+state name : x1R3W
+invariant : 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>error
+1d3-1D3=0
+sync label: 
+updates: 
+==>x1R2W3W
+1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+c2'= 10, d2'= 10
+state name : x1R2W
+invariant : 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>error
+1d2-1D2=0
+sync label: 
+updates: 
+==>x1R2W3W
+1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+c3'= 10, d3'= 10
+state name : x1R2W3W
+invariant : 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>error
+1d2-1D2=0
+sync label: 
+updates: 
+==>error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : error
+invariant : 
+rates : 
+edges : 
+Initial states : idle
+bad states : error 
+--------------------------------------
+To composite ...  Done!
+--------------------------------------
+Automaton name "act1act2act3sched"
+synclabs :
+r1
+r2
+r3
+r1
+r2
+r3
+empty
+state name : wait_for_offset1wait_for_offset2wait_for_offset3idle
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R
+1p1-1O1=0 & 
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x2R
+1p2-1O2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x3R
+1p3-1O3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x3R
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R3W
+1p1-1O1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x2R3W
+1p2-1O2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_offset3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x2R
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R2W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x2R3W
+1p3-1O3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_offset2wait_for_offset3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x2R3W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R2W3W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_offset2wait_for_offset3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x1R
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_offset3x1R2W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x1R3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_offset2wait_for_offset3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x1R3W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_offset3x1R2W3W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_offset3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x1R2W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_offset1wait_for_offset2wait_for_period3x1R2W3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_offset2wait_for_offset3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3x1R2W3W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_offset1wait_for_offset2wait_for_offset3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_offset3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_offset1wait_for_offset2wait_for_period3idle
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R
+1p1-1O1=0 & 
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R
+1p2-1O2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x3R
+1p3-1T3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_offset1wait_for_offset2wait_for_period3x3R
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R3W
+1p1-1O1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R3W
+1p2-1O2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3x2R
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R2W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x2R3W
+1p3-1T3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3x2R3W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R2W3W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3x1R
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x1R2W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x1R3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3x1R3W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x1R2W3W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3x1R2W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_offset1wait_for_offset2wait_for_period3x1R2W3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_offset2wait_for_period3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3x1R2W3W
+invariant : 1p1-1O1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_offset1wait_for_offset2wait_for_period3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_offset2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_offset2wait_for_period3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_offset1wait_for_period2wait_for_offset3idle
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R
+1p1-1O1=0 & 
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x2R
+1p2-1T2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x3R
+1p3-1O3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_offset1wait_for_period2wait_for_offset3x3R
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R3W
+1p1-1O1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x2R3W
+1p2-1T2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3x2R
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R3W
+1p3-1O3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3x2R3W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W3W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3x1R
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_offset3x1R2W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x1R3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3x1R3W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_offset3x1R2W3W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3x1R2W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x1R2W3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_period2wait_for_offset3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3x1R2W3W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_offset3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_offset3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_offset1wait_for_period2wait_for_period3idle
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R
+1p1-1O1=0 & 
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R
+1p2-1T2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x3R
+1p3-1T3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_offset1wait_for_period2wait_for_period3x3R
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R3W
+1p1-1O1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R3W
+1p2-1T2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3x2R
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R3W
+1p3-1T3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3x2R3W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+1p1-1O1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, p2'= 1C1, p3'= 1p3+1C3, c1'= 10, d1'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3x1R
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x1R2W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x1R3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3x1R3W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x1R2W3W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3x1R2W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x1R2W3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_offset1wait_for_period2wait_for_period3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3x1R2W3W
+invariant : 1p1-1O1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_offset1wait_for_period2wait_for_period3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_offset1wait_for_period2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_offset1wait_for_period2wait_for_period3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_period1wait_for_offset2wait_for_offset3idle
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R
+1p1-1T1=0 & 
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x2R
+1p2-1O2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x3R
+1p3-1O3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_period1wait_for_offset2wait_for_offset3x3R
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R3W
+1p1-1T1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x2R3W
+1p2-1O2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_offset3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3x2R
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R2W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x2R3W
+1p3-1O3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_offset2wait_for_offset3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3x2R3W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x1R2W3W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_offset2wait_for_offset3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3x1R
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x1R3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_offset2wait_for_offset3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3x1R3W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W3W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_offset3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3x1R2W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R2W3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_offset2wait_for_offset3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3x1R2W3W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_offset3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_offset3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_period1wait_for_offset2wait_for_period3idle
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R
+1p1-1T1=0 & 
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R
+1p2-1O2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x3R
+1p3-1T3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_period1wait_for_offset2wait_for_period3x3R
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R3W
+1p1-1T1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R3W
+1p2-1O2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3x2R
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R2W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x2R3W
+1p3-1T3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3x2R3W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R2W3W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3x1R
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x1R3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3x1R3W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+1p2-1O2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3x1R2W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x1R2W3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_offset2wait_for_period3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3x1R2W3W
+invariant : 1p1-1T1<=0 & 1p2-1O2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_period1wait_for_offset2wait_for_period3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_offset2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_offset2wait_for_period3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_period1wait_for_period2wait_for_offset3idle
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R
+1p1-1T1=0 & 
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x2R
+1p2-1T2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x3R
+1p3-1O3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_period1wait_for_period2wait_for_offset3x3R
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R3W
+1p1-1T1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x2R3W
+1p2-1T2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3x2R
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R3W
+1p3-1O3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3x2R3W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W3W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3x1R
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x1R3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3x1R3W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x1R2W3W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3x1R2W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+1p3-1O3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_period2wait_for_offset3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3x1R2W3W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1O3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_offset3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_offset3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_offset3error
+invariant : 
+rates : 
+edges : 
+state name : wait_for_period1wait_for_period2wait_for_period3idle
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R
+1p1-1T1=0 & 
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R
+1p2-1T2=0 & 
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x3R
+1p3-1T3=0 & 
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+state name : wait_for_period1wait_for_period2wait_for_period3x3R
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R3W
+1p1-1T1=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R3W
+1p2-1T2=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_period3idle
+1c3-1C3=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c3-1C3<0 & 1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3x2R
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R3W
+1p3-1T3=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_period2wait_for_period3idle
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3x2R3W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+1p1-1T1=0 & 1c2-1C2<0 & 1d2-1D2<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r1
+updates: 
+p1'= 10, c1'= 10, d1'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x3R
+1c2-1C2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c2-1C2<0 & 1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3x1R
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0
+rates : 
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x1R3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_period2wait_for_period3idle
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3x1R3W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+1p2-1T2=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c3-1C3<0 & 1d3-1D3<=0
+sync label: r2
+updates: 
+p2'= 10, c2'= 10, d2'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x3R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3x1R2W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0
+rates : c2'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+1p3-1T3=0 & 1c1-1C1<0 & 1d1-1D1<=0 & 1c2-1C2<0 & 1d2-1D2<=0
+sync label: r3
+updates: 
+p3'= 10, c3'= 10, d3'= 10
+==>wait_for_period1wait_for_period2wait_for_period3x2R
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3x1R2W3W
+invariant : 1p1-1T1<=0 & 1p2-1T2<=0 & 1p3-1T3<=0 & 1c1-1C1<=0 & 1d1-1D1<=0 & 1c2-1C2<=0 & 1d2-1D2<=0 & 1c3-1C3<=0 & 1d3-1D3<=0
+rates : c2'=0, c3'=0
+edges : 
+==>wait_for_period1wait_for_period2wait_for_period3x2R3W
+1c1-1C1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1c1-1C1<0 & 1d1-1D1=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1d2-1D2=0
+sync label: 
+updates: 
+==>wait_for_period1wait_for_period2wait_for_period3error
+1d3-1D3=0
+sync label: 
+updates: 
+state name : wait_for_period1wait_for_period2wait_for_period3error
+invariant : 
+rates : 
+edges : 
+Initial states : wait_for_offset1wait_for_offset2wait_for_offset3idle
+bad states : wait_for_offset1wait_for_offset2wait_for_offset3error wait_for_offset1wait_for_offset2wait_for_period3error wait_for_offset1wait_for_period2wait_for_offset3error wait_for_offset1wait_for_period2wait_for_period3error wait_for_period1wait_for_offset2wait_for_offset3error wait_for_period1wait_for_offset2wait_for_period3error wait_for_period1wait_for_period2wait_for_offset3error wait_for_period1wait_for_period2wait_for_period3error 
+--------------------------------------
+variables : p1  c1  d1  p2  c2  d2  p3  c3  d3  
+parameters : 
+imcr parameters : 
+initial declaration : 
+act1=wait_for_offset1 & act2=wait_for_offset2 & act3=wait_for_offset3 & sched=idle1p1=0 & 1p2=0 & 1p3=0 & 1c1=0 & 1d1=0 & 1c2=0 & 1d2=0 & 1c3=0 & 1d3=0 & 1x=0 & 1y=0
+the target location :  sched=error
+********************* to output automata *****************
+********************* done *******************************
+------------------------------------------
+Reachability analysis :
+------------------------------------------
+step 0
+ ------------------------------------ 
+step 1
+ next before clean : 3
+ next after clean : 3
+ Number of passed states : 1
+ Number of step states : 3
+ ------------------------------------ 
+ ------------------------------------ 
+step 2
+ next before clean : 3
+ next after clean : 3
+ Number of passed states : 4
+ Number of step states : 3
+ ------------------------------------ 
+ ------------------------------------ 
+step 3
+ next before clean : 1
+ next after clean : 1
+ Number of passed states : 7
+ Number of step states : 1
+ ------------------------------------ 
+ ------------------------------------ 
+step 4
+ next before clean : 1
+ next after clean : 1
+ Number of passed states : 8
+ Number of step states : 1
+ ------------------------------------ 
+ ------------------------------------ 
+step 5
+ next before clean : 1
+ next after clean : 1
+ Number of passed states : 9
+ Number of step states : 1
+ ------------------------------------ 
+The target location is not reached.
+Done! 
+Fri Nov  8 16:22:34 CET 2013
+Fri Nov  8 16:29:37 CET 2013
