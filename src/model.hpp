@@ -153,7 +153,7 @@ struct pair_sc {
   // sc1 cannot contain sc2 if there is a maximal value from sc2
   // that is larger than the corresponding maximal value in sc1
   bool not_contains(const pair_sc &sc2) const {
-    for ( int i = 0; i < maximal_mns.size(); i++)
+    for ( unsigned i = 0; i < maximal_mns.size(); i++)
       if ( sc2.maximal_mns[i]/sc2.maximal_mds[i] > maximal_mns[i]/maximal_mds[i])
         return true;
     return false;

@@ -72,6 +72,7 @@ mymodel parsefile(const string &myfile)
 
     // The rules
     rule task_list, task, sys, tprop, sprop, ctime, dline, period, sched, nproc, tasktype;
+
     // a task list is a list of tasks
     task_list = *task;
 
@@ -88,17 +89,16 @@ mymodel parsefile(const string &myfile)
     tprop = (ctime | dline | period | tasktype);
     sprop = (sched | nproc );
     
-    // These functions will read and store the properties in m
+    // These functions will read the properties and store them in m
     tprop[std::bind(read_tprop, std::ref(m), _1)];
     sprop[std::bind(read_sprop, std::ref(m), _1)];
 
-    // a task declaration
+    // task declaration
     // the function creates a task and stores its name
     task = keyword("task",false) >> (rule(tk_ident)[std::bind(&create_task, std::ref(m), _1)])
-	                    >> rule('{') >> *tprop >> rule('}');
+	                         >> rule('{') >> *tprop >> rule('}');
     // a sys declaration
     sys = keyword("sys",false) >> rule('{') >> *sprop >> rule('}');
-
 
     try {
 	cout << "Parsing the system first : " << sys.parse(pc) << endl; 

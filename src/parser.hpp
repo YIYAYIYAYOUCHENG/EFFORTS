@@ -45,7 +45,7 @@ struct Var_list
     // Return the index of variable "s" in the variable list;
 	// return -1 if the input string does not match a variable name
     int find(const std::string s) const {
-		for( int i = 0; i < vars.size(); i++)
+		for ( unsigned i = 0; i < vars.size(); i++)
 			if( vars[i] == s) return i;
 		return -1;
 	}
@@ -66,7 +66,7 @@ struct Param_list
 	std::vector<Param> params;
 
 	int find(const std::string s) const {
-		for( int i = 0; i < params.size(); i++)
+		for( unsigned i = 0; i < params.size(); i++)
 			if( params[i].name == s) return i;
 		return -1;
 	}
@@ -83,7 +83,7 @@ struct EXPR
 	std::string value;
 	// to print the expression
 	void print() const {
-		for ( int i = 0; i < expr_atoms.size(); i++)
+		for ( unsigned i = 0; i < expr_atoms.size(); i++)
 			std::cout << expr_atoms[i].first << expr_atoms[i].second;
 			std::cout << op << value;
 	} 
@@ -93,7 +93,7 @@ struct EXPR
 	 * 	not in this expression, 0 is returned.
 	 **/
 	int find (const std::string s) const {
-		for ( int i = 0; i < expr_atoms.size(); i++) {
+		for ( unsigned i = 0; i < expr_atoms.size(); i++) {
 			if( expr_atoms[i].second == s) {
 				return atof (expr_atoms[i].first.c_str()); 
 			}
@@ -112,7 +112,7 @@ struct ASSIGN {
     std::vector<pair_ss> assign_atoms;
 
     void print() const {
-        for ( int i = 0; i < assign_atoms.size(); i++) {
+        for ( unsigned i = 0; i < assign_atoms.size(); i++) {
             std::cout << assign_atoms[i].first << "'=" << assign_atoms[i].second;
 			if (i < assign_atoms.size()-1)
 				std::cout << ", ";
@@ -121,7 +121,7 @@ struct ASSIGN {
     }
     
     int find(const std::string s) const  {
-      for ( int i = 0; i < assign_atoms.size(); i++)
+      for ( unsigned i = 0; i < assign_atoms.size(); i++)
         if( assign_atoms[i].first == s)
           return atof(assign_atoms[i].second.c_str());
       // By default, the variable rate is 1
@@ -141,9 +141,9 @@ struct UPDATE {
   void print() const {
     std::cout << left;
     std::cout << "'= ";
-    for ( int i = 0; i < right_atoms.size(); i++)
+    for ( unsigned i = 0; i < right_atoms.size(); i++)
       std::cout << right_atoms[i].first << right_atoms[i].second;
-    for ( int i = 0; i < cons.size(); i++)
+    for ( unsigned i = 0; i < cons.size(); i++)
       std::cout << cons[i];
   }
 
@@ -151,7 +151,7 @@ struct UPDATE {
     if ( cons.size() == 0)
       return 0;
     int sum = 0;
-    for ( int i = 0; i < cons.size(); i++)
+    for ( unsigned i = 0; i < cons.size(); i++)
       sum += atof ( cons[i].c_str());
     return sum;
   }
@@ -161,7 +161,7 @@ struct UPDATE {
 	 * 	not in this expression, 0 is returned.
 	 **/
 	int find (const std::string s) const {
-		for ( int i = 0; i < right_atoms.size(); i++) {
+		for ( unsigned i = 0; i < right_atoms.size(); i++) {
 			if( right_atoms[i].second == s) {
 				return atof (right_atoms[i].first.c_str());
 			}
@@ -195,7 +195,7 @@ struct EDGE
     }
     void print() const {
       std::cout << "==>" << dest << "\n";
-      for ( int i = 0; i < guard.size(); i++) {      
+      for ( unsigned i = 0; i < guard.size(); i++) {      
         guard[i].print();
         if ( i < guard.size()-1)
           std::cout  << " & ";
@@ -205,7 +205,7 @@ struct EDGE
       std::cout << "sync label: " << sync << std::endl;
       std::cout << "updates: "; 
       ass.print();
-      for ( int i = 0; i < updates.size(); i++) {
+      for ( unsigned i = 0; i < updates.size(); i++) {
         updates[i].print();
         if ( i < updates.size()-1)
           std::cout  << ", ";
@@ -231,7 +231,7 @@ struct LOCATION
     void print() const{
         std::cout << "state name : " << name << "\n";
 		std::cout << "invariant : ";
-        for ( int i = 0; i < invar.size(); i++) {
+        for ( unsigned i = 0; i < invar.size(); i++) {
             invar[i].print();
 			if (i < invar.size()-1)
 				std::cout  << " & ";
@@ -241,7 +241,7 @@ struct LOCATION
         rate.print();
         //std::cout << std::endl;
 		std::cout << "edges : \n";
-        for ( int i = 0; i < outgoing.size(); i++)
+        for ( unsigned i = 0; i < outgoing.size(); i++)
             outgoing[i].print();
     }
 
@@ -258,7 +258,7 @@ struct AUTOMATON {
 	void print() const {
     	std::cout << "automaton name : " << name << std::endl;
 		
-    	for( int i = 0; i < locations.size(); i++) {
+    	for( unsigned i = 0; i < locations.size(); i++) {
 			std::cout << "LOC<" << i << ">: \n";
     		locations[i].print();
 		}
@@ -276,20 +276,20 @@ struct INIT {
 
 	void print() const {
 		std::cout << std::endl;
-		for( int i = 0; i < init.size(); i++) {
+		for( unsigned i = 0; i < init.size(); i++) {
 			std::cout << init[i].first << "=" << init[i].second;
 			if (i < init.size()-1) 
 				std::cout << " & ";
 		}
 		//std::cout << std::endl;
-		for( int i = 0; i < constraints.size(); i++) {
+		for( unsigned i = 0; i < constraints.size(); i++) {
 			constraints[i].print();
 			if (i < constraints.size()-1) 
 				std::cout << " & ";
 		}
 		std::cout << std::endl;
 		std::cout << "the target location :  ";
-		for( int i = 0; i < bads.size(); i++) {
+		for( unsigned i = 0; i < bads.size(); i++) {
 			std::cout << bads[i].first << "=" << bads[i].second;
 			if (i < bads.size()-1) 
 				std::cout << " & ";
@@ -313,11 +313,11 @@ struct MODEL
     MODEL() {}
 	void print() {
 		std::cout << "variables : ";
-		for (int i = 0; i < var_list.vars.size(); i++)
+		for (unsigned i = 0; i < var_list.vars.size(); i++)
 			std::cout << var_list.vars[i] << "  ";
 		std::cout << std::endl; 
 		std::cout << "parameters : ";
-		for (int i = 0; i < param_list.params.size(); i++) {
+		for (unsigned i = 0; i < param_list.params.size(); i++) {
 			std::cout << param_list.params[i].name;
 			if (param_list.params[i].op != "")
 				std::cout << param_list.params[i].op << param_list.params[i].value;
@@ -325,7 +325,7 @@ struct MODEL
 		}
 		std::cout << std::endl; 
 		std::cout << "imcr parameters : ";
-		for (int i = 0; i < im_param_list.params.size(); i++) {
+		for (unsigned i = 0; i < im_param_list.params.size(); i++) {
 			std::cout << im_param_list.params[i].name;
 			std::cout << "  ";
 		}
@@ -333,7 +333,7 @@ struct MODEL
 		std::cout << "initial declaration : ";
 		init.print();
 		std::cout << "********************* to output automata *****************\n";
-		for( int i = 0; i < automaton_v.size(); i++)
+		for( unsigned i = 0; i < automaton_v.size(); i++)
 				automaton_v[i].print();
 		std::cout << "********************* done *******************************\n";
 	}
