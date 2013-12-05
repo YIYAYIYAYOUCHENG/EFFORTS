@@ -1,0 +1,7 @@
+sys { sched = fpfp; nproc = 2; }
+
+task t0 {C = 2; T = 16; D = 12; type = periodic; }
+task t1 {C = 3; T = 15; D = 10; type = sporadic; }
+task t2 {C = 4; T = 10; D = 8;  type = periodic; }
+task t3 {C = 5; T = 15; D = 20; type = sporadic; }
+

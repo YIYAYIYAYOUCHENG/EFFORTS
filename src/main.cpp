@@ -2,6 +2,7 @@
 #include "model.hpp"
 #include <boost/ref.hpp>
 #include <boost/program_options.hpp>
+#include "newparser.hpp"
 
 namespace po = boost::program_options;
 
@@ -19,6 +20,7 @@ int main(int argc, char **argv)
     ("fast-reach", "Reachability test; when the target location is reached, the application stops")
     ("fpfp-sim", "Option to trigger FPFP simulation relation")
     ("op", "Set this option to remove all redundent states") 
+      ("newparser", "this uses the new parser")
     ;
   
   po::variables_map vm;
@@ -42,6 +44,11 @@ int main(int argc, char **argv)
   string fname (vm["file"].as<string>());
   //string fname (argv[1]);
   
+  if (vm.count("newparser")) {
+      cout << "Starting the new parser" << endl;
+      parsefile(fname);
+      exit(-1);
+  }
   Model mod (parse(fname.c_str()));
   if (vm.count("fpfp-sim"))
     mod.set_fpfp_sim();
