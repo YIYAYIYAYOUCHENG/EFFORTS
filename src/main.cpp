@@ -1,3 +1,4 @@
+#include <google/profiler.h>
 #include "parser.hpp"
 #include "model.hpp"
 #include <boost/ref.hpp>
@@ -8,7 +9,8 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-  
+  ProfilerStart("my.prof");
+
   po::options_description options(argv[0]);
   options.add_options()
     ("help,h", "Use -h or --help to list all arguments")
@@ -21,6 +23,9 @@ int main(int argc, char **argv)
     ("fpfp-sim", "Option to trigger FPFP simulation relation")
     ("op", "Set this option to remove all redundent states") 
       ("newparser", "this uses the new parser")
+      ("critical-instants", "this trigers the critical-instants reducing")
+      ("busy-period", "trigers \"fast release\" during busy period")
+      ("cpus", po::value<int>(), "The number of cpus")
     ;
   
   po::variables_map vm;
@@ -46,14 +51,20 @@ int main(int argc, char **argv)
   
   if (vm.count("newparser")) {
       cout << "Starting the new parser" << endl;
-      parsefile(fname);
+      //parsefile(fname);
       exit(-1);
   }
   Model mod (parse(fname.c_str()));
   if (vm.count("fpfp-sim"))
     mod.set_fpfp_sim();
+  if (vm.count("critical-instants"))
+    mod.set_critical_instants();
+  if (vm.count("cpus"))
+    mod.set_cpus(vm["cpus"].as<int>());
   if (vm.count("op"))
     mod.set_op();
+  if (vm.count("busy-period"))
+    mod.set_busy_period();
   //mod.print();
 
   if( vm.count("psy")) {
@@ -95,9 +106,11 @@ int main(int argc, char **argv)
       string f = fname + string(".log");
       mod.print_log(f);
     }
-    return 0;
+    //return 0;
 
   }
+
+  ProfilerStop();
 	//if( vm.count("imcr")) {
 	//	cout << "------------------------------------------\n";
 	//	cout << "Parameter synthesis with IMCR:\n";

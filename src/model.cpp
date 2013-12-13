@@ -83,54 +83,15 @@ void Automaton::print() const
     cout << "--------------------------------------\n";
 }	
 		
-bool Path::contains (const pair_sc &sc) {
-    for ( unsigned i = 0; i < sc_path.size(); i++)
-	//if( sc_path[i].contains(sc))
-	if( sc_path[i].contains(sc) && sc.contains(sc_path[i]))
-	    return true;
-    return false;
-}
- 
-void Path::push_back(const pair_sc &sc, const EDGE &e) {
-    sc_path.push_back(sc);
-    e_path.push_back(e);
-}
-
-void Path::push_back(const pair_sc &sc) {
-    sc_path.push_back(sc);
-}
-
-void Path::pop_back() {
-
-    if ( sc_path.size() == 0) {
-	cout << "Something wrong here \n";	
-	exit(-1);
-    }
-    sc_path.pop_back();
-    if( e_path.size() != 0 )
-	e_path.pop_back();
-}
-
-void Path::print() const {
-    //if ( size() == 0)	return;
-    //cout << sc_path[0].label; 
-    //for ( int i = 0; i < e_path.size(); i++)
-    //	cout << " => " << e_path[i].dest;
-    //cout << endl;
-}
-
-void Path::clear() {
-    sc_path.clear();
-    e_path.clear();
-}
-
-
 Model::Model(const MODEL &mod)
 {
     type = DEF;
     fast_reach = false; 
     fpfp_sim = false;
     op = false;
+    cpus = 2;
+    ci = false;
+    bp = false;
     // variable list
     var_list = mod.var_list;
     // reserved variable list has been abandoned
@@ -170,11 +131,11 @@ Model::Model(const MODEL &mod)
 	automata.push_back(aton);
     }			
 		
-    cout << "number of automata " << automata.size() << endl;
-    for (unsigned i = 0; i < automata.size(); i++) {
-        cout << i << " automaton " << automata[i]->name << endl;
-        automata[i]->print();
-    }
+    //cout << "number of automata " << automata.size() << endl;
+    //for (unsigned i = 0; i < automata.size(); i++) {
+    //    cout << i << " automaton " << automata[i]->name << endl;
+    //    automata[i]->print();
+    //}
 		
     // Bounded parametric synthesis
     bound = numeric_limits<int>::max();
@@ -184,14 +145,23 @@ Model::Model(const MODEL &mod)
         com = composite(com, automata[i]);
     }
     cout << " Done!\n";
-    com->print();
+    //com->print();
 
     for (vector<Location*>::iterator it = com->locations.begin();
 	  it != com->locations.end(); ++it) {
-	for (unsigned i = 0; i < (*it)->outgoing.size(); i++)
+        (*it)->populate_signature();
+	for (unsigned i = 0; i < (*it)->outgoing.size(); i++) {
 	    (*it)->outgoing[i].index = UniqueIndex::get_next_index();
+            //(*it)->outgoing[i].guard_cvx = guard_cvx( (*it)->outgoing[i] );
+        }
+        (*it)->time_elapse = time_elapse_cvx(*it);
+
+        passed_map[(*it)->signature] = make_shared< list<shared_ptr<pair_sc> > > ();
+        passing_map[(*it)->signature] = make_shared< list<shared_ptr<pair_sc> > > ();
+        next_map[(*it)->signature] = make_shared< list<shared_ptr<pair_sc> > > ();
     }
 
+    N = var_list.vars.size() / 2;
     /** 
      * for now, let's focus on reachability analysis
      **/
@@ -206,36 +176,71 @@ Model::~Model()
 }
 
 NNC_Polyhedron Model::base_cvx() {
-
-    int num_p = param_list.params.size();
-    int num_v = var_list.vars.size();
-    int dim = 2*num_v + num_p + 1;
   
-    NNC_Polyhedron poly(dim);
+  int dim = var_list.vars.size();
+  
+  NNC_Polyhedron poly(dim);
+  vector<Variable> Vars;
+  
+  for ( int i = 0; i < dim; i++)
+    Vars.push_back(Variable(i));
+
+  for ( vector<EXPR>::iterator it = init.constraints.begin();
+      it != init.constraints.end(); it++) {
+
+    Linear_Expression le;
+    for ( int i = 0; i < known_param_list.params.size(); i++) {
+      int co = it->find(known_param_list.params[i].name);
+      if ( co != 0)
+        le += atof (known_param_list.params[i].value.c_str()) * co;
+    }
+    for ( int i = 0; i < dim; i++) {
+      int co = it->find(var_list.vars[i]);
+      if ( co != 0)
+        le += Vars[i] * it->find(var_list.vars[i]);
+    }	
+    
+    int right = atof(it->value.c_str());
+    
+    Constraint cs;
+    if ( it->op == "<") cs = ( le < right);
+    if ( it->op == "=") cs = ( le == right);
+    if ( it->op == "<=") cs = ( le <= right);
+    if ( it->op == ">") cs = ( le > right);
+    if ( it->op == ">=") cs = ( le >= right);
+    poly.add_constraint(cs);
+
+  }
+  
+  return poly;
+
+}
+
+void Model::invar_cvx(const Location *l, NNC_Polyhedron &cvx) {
+  
+    int dim = var_list.vars.size();
+    //NNC_Polyhedron cvx(dim);
+  
     vector<Variable> Vars;
-    int total = 0;
-  
-    for ( int i = 0; i < num_p; i++)
-	Vars.push_back(Variable(total++));
-    for ( int i = 0; i < num_v; i++)
-	Vars.push_back(Variable(total++));
+    for (int i = 0; i < dim; i++)
+	Vars.push_back(Variable(i));
 
-    for (vector<EXPR>::iterator it = init.constraints.begin();
-	  it != init.constraints.end(); it++) {
-
-	// to analyse each linear constraint
+    // invariant
+    for ( vector<EXPR>::const_iterator it = l->invar.begin(); 
+        it != l->invar.end(); it++) {
 
 	Linear_Expression le;
-	for ( int i = 0; i < num_p; i++) {
-	    le += Vars[i] * it->find(param_list.params[i].name);
+
+        for ( int i = 0; i < known_param_list.params.size(); i++) {
+          int co = it->find(known_param_list.params[i].name);
+          if ( co != 0)
+            le += co * atof (known_param_list.params[i].value.c_str());
+        }
+	for ( int i = 0; i < dim; i++) {
+          int co = it->find(var_list.vars[i]);
+          if ( co != 0)
+	    le += Vars[i] * it->find(var_list.vars[i]);
 	}
-	for ( unsigned i = 0; i < known_param_list.params.size(); i++) {
-	    le += atof (known_param_list.params[i].value.c_str()) * 
-		it->find(known_param_list.params[i].name);
-	}
-	for ( int i = 0; i < num_v; i++) {
-	    le += Vars[num_p + i] * it->find(var_list.vars[i]);
-	}	
     
 	int right = atof(it->value.c_str());
     
@@ -245,11 +250,224 @@ NNC_Polyhedron Model::base_cvx() {
 	if ( it->op == "<=") cs = ( le <= right);
 	if ( it->op == ">") cs = ( le > right);
 	if ( it->op == ">=") cs = ( le >= right);
-	poly.add_constraint(cs);
+	cvx.add_constraint(cs);
+    }
+  
+}
+
+void Model::guard_cvx(const EDGE &edge, NNC_Polyhedron &cvx) {
+  
+    int dim = var_list.vars.size();
+  
+    const EDGE *it = &edge;
+    //NNC_Polyhedron cvx(dim);
+  
+    vector<Variable> Vars;
+    for ( int i = 0; i < dim; i++)
+	Vars.push_back(Variable(i));
+  
+    // guard
+    for ( vector<EXPR>::const_iterator iit = it->guard.begin(); 
+        iit != it->guard.end(); iit++) {
+	Linear_Expression le;
+        for ( int i = 0; i < known_param_list.params.size(); i++) {
+          int co = iit->find(known_param_list.params[i].name);
+          if ( co != 0) 
+            le += atof (known_param_list.params[i].value.c_str()) * co;
+        }
+	for ( int i = 0; i < dim; i++) {
+          int co = iit->find(var_list.vars[i]);
+          if ( co != 0)
+	    le += Vars[i] * co;
+	}
+    
+	int right = atof(iit->value.c_str());
+	Constraint cs;
+	if ( iit->op == "<") cs = ( le < right);
+	if ( iit->op == "=") cs = ( le == right);
+	if ( iit->op == "<=") cs = ( le <= right);
+	if ( iit->op == ">") cs = ( le > right);
+	if ( iit->op == ">=") cs = ( le >= right);
+	cvx.add_constraint(cs);
+  
+    }
+  
+}
+
+void Model::update_cvx2(const EDGE &edge, NNC_Polyhedron &cvx) {
+
+  
+    int dim = var_list.vars.size();
+  
+    const EDGE *it = &edge;
+  
+    vector<Variable> Vars;
+    for ( int i = 0; i <= 2*dim; i++)
+	Vars.push_back(Variable(i));
+
+    Variables_Set vs;
+
+    cvx.add_space_dimensions_and_embed(dim);
+
+    for ( int i = 0; i < dim; i++) {
+
+        vs.insert(Vars[i]);
+
+	int i2 = dim + i;
+	
+	bool u_flag = false;
+	UPDATE update;
+
+	for ( vector<UPDATE>::const_iterator uit = it->updates.begin(); 
+	      uit != it->updates.end(); uit++) {
+	    if (var_list.vars[i] == uit->left) {
+		u_flag = true;
+		update = *uit;
+		break;
+	    }
+	}
+
+	Constraint cs;	
+	if (!u_flag) {
+	    cs = (Vars[i2] == Vars[i]);
+	    cvx.add_constraint(cs);
+	    continue;
+	}
+
+	Linear_Expression le;
+	for ( unsigned j = 0; j < known_param_list.params.size(); j++) {
+	    le += atof (known_param_list.params[j].value.c_str()) * 
+		update.find(known_param_list.params[j].name);
+	}
+	for ( int j = 0; j < dim; j++) {
+	    le += Vars[j] * update.find(var_list.vars[j]);
+	}
+	le += update.get_cons();
+
+	cs = (Vars[i2] == le);
+	cvx.add_constraint(cs);
+
+    }
+
+    cvx.remove_space_dimensions(vs);
+}
+
+void Model::update_cvx(const EDGE &edge, NNC_Polyhedron &cvx) {
+
+  
+    int dim = var_list.vars.size();
+  
+    const EDGE *it = &edge;
+  
+    vector<Variable> Vars;
+    for ( int i = 0; i <= dim; i++)
+	Vars.push_back(Variable(i));
+
+    int p, c;
+    Variables_Set vs;
+
+    for ( int i = 0; i < dim; i++) {
+
+	bool u_flag = false;
+	UPDATE update;
+
+	for ( vector<UPDATE>::const_iterator uit = it->updates.begin(); 
+	      uit != it->updates.end(); uit++) {
+	    if (var_list.vars[i] == uit->left) {
+		u_flag = true;
+		update = *uit;
+		break;
+	    }
+	}
+
+	if (!u_flag) {
+	    continue;
+	}
+
+        if ( i < dim/2) {
+          cvx.unconstrain(Vars[i]);
+          Constraint cs1 = (Vars[i] == 0);
+          cvx.add_constraint(cs1);
+          i = dim/2 - 1;
+
+          continue;
+	}
+
+
+        cvx.expand_space_dimension(Vars[i], 1);
+
+        cvx.unconstrain(Vars[i]);
+
+	Linear_Expression le;
+	for ( unsigned j = 0; j < known_param_list.params.size(); j++) {
+	    le += atof (known_param_list.params[j].value.c_str()) * 
+		update.find(known_param_list.params[j].name);
+	}
+	for ( int j = dim; j <= dim; j++) {
+	    le += Vars[j] * update.find(var_list.vars[i]);
+	}
+	le += update.get_cons();
+
+	Constraint cs2 = (Vars[i] == le);
+	cvx.add_constraint(cs2);
+
+
+        cvx.remove_higher_space_dimensions(dim);
+        return;
 
     }
   
-    return poly;
+}
+
+NNC_Polyhedron Model::time_elapse_cvx(const Location *l) {
+  
+  
+    int dim = var_list.vars.size();
+    NNC_Polyhedron cvx (dim);
+  
+    vector<Variable> Vars;
+    for (int i = 0; i < dim; i++)
+	Vars.push_back(Variable(i));
+
+    // time elapse
+    for ( int i = 0; i < dim; i++) {
+	int i_co = l->rate.find(var_list.vars[i]);
+    
+	Constraint cs = (Vars[i] == i_co);
+	cvx.add_constraint(cs);
+    }
+  
+    return cvx;
+
+}
+
+void Model::time_elapse_cvx(const Location *l, NNC_Polyhedron &cvx) {
+  
+  
+    int dim = var_list.vars.size();
+  
+    vector<Variable> Vars;
+    for (int i = 0; i < 2*dim + 1; i++)
+	Vars.push_back(Variable(i));
+
+    cvx.add_space_dimensions_and_embed(dim+1);
+
+    // invar => time elapse
+    Constraint cs = (Vars[dim] >= 0);	
+    cvx.add_constraint(cs);
+  
+    Variables_Set vs;
+    for ( int i = 0; i < dim; i++) {
+	int i2 = i + dim + 1;
+	int i_co = l->rate.find(var_list.vars[i]);
+    
+	Constraint cs = (Vars[i] + i_co * Vars[dim] == Vars[i2]);
+	cvx.add_constraint(cs);
+        vs.insert(Vars[i]);
+    }
+
+    vs.insert(Vars[dim]);
+    cvx.remove_space_dimensions(vs);
 
 }
 
@@ -472,95 +690,269 @@ NNC_Polyhedron Model::edge_cvx(const EDGE &edge, const NNC_Polyhedron &pre_poly)
 
 }
 
+bool Model::contained_in( map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, 
+   const shared_ptr<pair_sc> & sc, bool opt, bool debug) {
+
+  for( auto iitm = m.cbegin(); iitm != m.cend(); iitm ++) {
+
+          if (sc->signature != (sc->signature | iitm->first)) continue;
+
+	  for ( auto il = iitm->second->begin(); il != iitm->second->end(); il++) { 
+	      if( (*il)->contains(sc, fpfp_sim))
+		      return true;	    
+          }
+  }
+
+  if ( !opt) return false;
+
+  for( auto iitm = m.begin(); iitm != m.end(); iitm ++) {
+
+          if (iitm->first != (sc->signature | iitm->first)) continue;
+
+          auto ed = iitm->second;
+
+	  //for ( unsigned i = 0; i < ed->size(); i++) { 
+	  for ( auto il = ed->begin(); il != ed->end(); il++) { 
+              if ( ! (*il)->valid) {
+                if (!debug)
+                  ed->erase(il++);
+                continue;
+              }
+	      if( sc->contains(*il, fpfp_sim)) {
+                (*il)->clean_children();
+                if (debug)
+                  (*il)->valid = false;
+                else
+                  ed->erase(il++);
+              }
+	  }
+  }
+  return false;
+}
+
+void Model::insert_into(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> &sc) {
+
+  auto v = m.find(sc->signature)->second;
+
+  v->push_back(sc);
+}
+
+static int count(int sig, int n) {
+  int c = 0;
+  for ( int i = 1; i <= n; i++)
+    if ((sig & (unsigned)pow(2,i-1)) != 0) c++;
+  return c;
+}
+
+bool Model::constrain_release1(const Location *l1) {
+
+  if ( count(l1->signature, N) < cpus) return true;
+  return false;
+}
+
+bool Model::constrain_release2(const shared_ptr<pair_sc> & sc) {
+
+  int total = count(sc->signature, N);
+  int now = 0;
+  for (int i = 1; i < N ; i++) {
+    if ( (sc->signature & (unsigned)pow(2,i-1)) == 0)
+      continue;
+    NNC_Polyhedron cvx = sc->cvx;
+    Variable v(i-1);
+    Constraint cs = ( v == 0 );
+    cvx.add_constraint(cs);
+    if ( ! cvx.is_empty())
+      now ++;
+  }
+
+  if ( total - now >= cpus) return true; 
+
+  return false;
+}
+
+bool Model::busy_period(unsigned sig) {
+  return (sig & (unsigned)pow(2,N-1)) != 0 && count(sig,N)>cpus;
+}
+
+bool Model::forward_release(const shared_ptr<pair_sc>& state, unsigned ti) {
+
+  if (state->tk_new)  return false;
+
+  Variable v(ti-1);
+
+  NNC_Polyhedron poly = state->cvx;
+
+  // current state contains p_i == T_i
+  Constraint cs = ( v == atoi(known_param_list.params[3*(ti-1)].value.c_str()));
+  poly.add_constraint(cs);
+  if( ! poly.is_empty())
+    return false;
+
+  // ti arrived earlier
+
+  shared_ptr<pair_sc> origin = state->prior;
+  bool idle_flag = false;
+
+  while( origin != nullptr) {
+    if ( ! origin->valid) return true;
+
+    if (busy_period(origin->signature)) {
+      poly = origin->cvx;
+      Constraint cs = ( v == atoi(known_param_list.params[3*(ti-1)].value.c_str()));
+      poly.add_constraint(cs);
+      if ( ! poly.is_empty())
+        return true;
+
+      if (origin->tk_new) 
+        break;
+        
+    }
+    else {
+      poly = origin->cvx;
+      Constraint cs = ( v == atoi(known_param_list.params[3*(ti-1)].value.c_str()));
+      poly.add_constraint(cs);
+      if ( ! poly.is_empty()) {
+        if (idle_flag)  { 
+          //cout << " release not in latest idle period\n"; 
+          return true;
+        }
+
+        idle_flag = true;
+        vector<Variable> vs;
+        for ( int i = 1; i < N; i++) 
+          if ( (origin->signature & (unsigned)pow(2, i-1)) ==0 && (state->signature & (unsigned)pow(2, i-1)) !=0)
+                  vs.push_back(Variable(i-1));
+        poly = state->cvx;
+        for (int i = 0; i < vs.size(); i++) {
+          cs = (vs[i]==0);
+          poly.add_constraint(cs);
+          if (poly.is_empty()){ 
+            //cout << " release in latest idle period\n"; 
+            return true;
+          }
+        }
+
+      }
+    }
+      
+
+    origin = origin->prior;
+  }
+
+  //ti arrived before tk
+  vector<Variable> vs;
+  for ( int i = 1; i < N; i++) 
+    if ( (origin->prior->signature & (unsigned)pow(2, i-1)) ==0 && (state->signature & (unsigned)pow(2, i-1)) !=0)
+            vs.push_back(Variable(i-1));
+  poly = state->cvx;
+  for (int i = 0; i < vs.size(); i++) {
+    cs = (vs[i]==0);
+    poly.add_constraint(cs);
+    if (poly.is_empty()){ 
+      //cout << " release before tk arrives\n"; 
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static int size(const map<unsigned int, shared_ptr<list<shared_ptr<pair_sc> > > > &m);
+
 void Model::forward_a_step() {
 
-    int num_p = param_list.params.size();
-    int num_v = var_list.vars.size();
-    //int dim = 2*num_v + num_p + 1;
-  
-    for (unsigned k = 0; k < passing.size(); k++) {
-	if ( !passing[k].valid) continue;
-	//
-	Location *l = com->get_a_location(passing[k].label);
-	NNC_Polyhedron poly = passing[k].cvx;
+  int K = 0;
+  for( auto itm = passing_map.rbegin(); itm != passing_map.rend(); itm ++) {
 
-	poly.add_space_dimensions_and_embed(num_v+1);
+    auto ing = itm->second;
+
+    for (auto il = ing->begin(); il != ing->end(); il++) {
+        if ( ! (*il)->valid) continue;
+	//
+	Location *l = com->get_a_location((*il)->label);
     
+        if ( K % 500 == 0)
+          cout << "  K = " << K << ", " << l->name << endl;
+        K ++;
+
 	for ( vector <EDGE>::const_iterator it = l->outgoing.begin(); 
 	      it != l->outgoing.end(); it++) {
-	    //cout << " => before an edge_cvx\n";
-	    NNC_Polyhedron cvx = edge_cvx(*it, poly);
-	    //cout << " => after an edge_cvx\n";
+            
+            if ( ! (*il)->valid) break;
 
-	    // to enqueue the latest state in "next queue"
-	    if( cvx.is_empty()) continue;
 	    Location *tmp = com->get_a_location(it->dest);
+            
+            if( ci) {
+              if ( (l->signature & (unsigned)pow(2,N-1)) == 0 && (tmp->signature & (unsigned)pow(2, N-1)) != 0) {
+                if ( constrain_release1(l)) {
+                  continue;
+                }
+                if ( count(l->signature, N) != cpus) continue;
+                if ( constrain_release2(*il)) {
+                  continue;
+                }
+              }
+              else if ( (l->signature & (unsigned)pow(2,N-1)) != 0 && (tmp->signature & (unsigned)pow(2,N-1))==0
+                  && !tmp->is_bad)
+                continue;
+            }
+
+            if (bp) {
+
+              // now, let's consider the busy period while tk is waiting
+              if ( (l->signature & (unsigned)pow(2,N-1)) != 0 && count(tmp->signature,N) > count(l->signature,N)
+                  && count(l->signature,N)>cpus) {
+                int ti = 0;
+                for (int h = 1; h < N; h++)
+                  if ( (l->signature & (unsigned)pow(2,h-1)) == 0 && (tmp->signature & (unsigned)pow(2, h-1)) != 0) {
+                    ti = h;
+                    break;
+                  }
+                //cout << "before judgement " << (*il)->label << "-" << tmp->name << endl;
+                if ( forward_release(*il, ti)) {
+                  //cout << (*il)->label << "-" << tmp->name << endl;
+                  continue;
+                }
+              }
+
+            }
+
+	    NNC_Polyhedron poly = (*il)->cvx;
+            guard_cvx(*it, poly);
+	    if( poly.is_empty()) continue;
+	    update_cvx(*it, poly);
       
-	    //cout << " => before a location_cvx\n";
-	    cvx = location_cvx(tmp, &cvx);
-	    //cout << " => after a location_cvx\n";
+            invar_cvx(tmp, poly);
+	    if( poly.is_empty()) continue;
+            poly.time_elapse_assign(tmp->time_elapse);
+            invar_cvx(tmp, poly);
+            
+	    if( poly.is_empty()) continue;
 
-	    if( type==FAST_REACH && fast_reach) {
-		if (cvx.is_empty()) { fast_reach = false; continue; }
+	    if( type==FAST_REACH && tmp->is_bad) {
 
-		cvx.remove_higher_space_dimensions(var_list.vars.size());
-
-		pair_sc sc(it->dest,cvx);
-		sc.pre = passing[k].state;
-		next.push_back(sc);
-		//cout << "The target is reached. Fast saving ...\n";
-		fast_save();
+		pair_sc sc(it->dest,poly, known_param_list, tmp->signature);
+		//sc.pre = passing[k].state;
+		//next.push_back(sc);
+		cout << "The target is reached. Fast saving ...\n";
+		//fast_save();
 		throw 0;
 	    }
 
-	    if( cvx.is_empty()) continue;
-      
-	    cvx.remove_higher_space_dimensions(var_list.vars.size());
 
-	    pair_sc sc(it->dest, cvx);
-	    bool flag = true;
-	    for ( unsigned i = 0; i < passed.size(); i++) { 
-		if ( !passed[i].valid) continue;
-		if( passed[i].contains(sc, fpfp_sim)) { 
-		    flag = false;
-		    break;
-		}
-		// If "optimized" option is set, all redundent "passed" states will be removed
-		if ( op == true) {
-		    if (sc.contains(passed[i], fpfp_sim)) {
-			passed[i].empty();
-		    }
-		}
-	    }
-      
-	    if( flag)
-		for ( unsigned i = 0; i < next.size(); i++) { 
-		    if (!next[i].valid) continue;
-		    if( next[i].contains(sc, fpfp_sim)) { 
-			flag = false; 
-			break;
-		    }
-		    else if ( sc.contains(next[i], fpfp_sim))
-			next[i].empty();
-		}
-      
-	    if( flag)
-		for ( unsigned i = 0; i < passing.size(); i++) {
-		    if ( !passing[i].valid) continue;
-		    if( passing[i].contains(sc, fpfp_sim)) { 
-			flag = false; 
-			break;
-		    }
-		    else if(sc.contains(passing[i], fpfp_sim))
-			passing[i].empty();
-		}
-      
-	    if( flag) {    
-		sc.pre = passing[k].state;
-		next.push_back(sc);
-	    }
-	}			
+	    auto sc = make_shared<pair_sc>(it->dest, poly, known_param_list, tmp->signature);
+            if ( (l->signature & (unsigned)pow(2,N-1)) == 0 && (tmp->signature & (unsigned)pow(2, N-1)) != 0)
+              sc->tk_new = true;
+
+            if (contained_in(passing_map, sc, op, true)) continue;
+            if (contained_in(next_map, sc, true, false)) continue;
+            if (contained_in(passed_map, sc, op, false)) continue;
+            (*il)->add_a_child(sc);
+            insert_into(next_map, sc);
+            sc->prior = (*il);
+        }
     }
+  }
 }
     
 void Model::restore_bad_paths(NNC_Polyhedron poly)
@@ -638,23 +1030,51 @@ void Model::fast_save() {
     //clean_pair_sc_v(passed, next.size());
 }
 
+void Model::from_a_2_b(map<unsigned int, shared_ptr<list<shared_ptr<pair_sc> > > > &a, 
+    map<unsigned int, shared_ptr<list<shared_ptr<pair_sc> > > > &b) {
+
+  for( auto it = a.begin(); it != a.end(); it ++) {
+          if (it->second->size() == 0) continue;
+
+          auto de = b.find(it->first)->second;
+          auto itpos = de->end();
+          de->splice(itpos, *(it->second));
+
+  }
+}
+
+static int size(const map<unsigned int, shared_ptr<list<shared_ptr<pair_sc> > > > &m) {
+  int s = 0;
+  for( auto iitm = m.cbegin(); iitm != m.cend(); iitm ++)
+    s += iitm->second->size();
+  return s;
+}
 void Model::sat() {
 
+    if (! bp) {
+      for( auto it = passing_map.begin(); it != passing_map.end(); it ++)
+        for( auto iit = it->second->begin(); iit != it->second->end(); iit ++) {
+          if ( !(*iit)->valid) {
+            it->second->erase(iit++);
+            continue;
+          }
+          (*iit)->empty();
+        }
+      for( auto it = next_map.begin(); it != next_map.end(); it ++)
+        for( auto iit = it->second->begin(); iit != it->second->end(); iit ++) {
+          if ( !(*iit)->valid) {
+            it->second->erase(iit++);
+          }
+        }
+    }
     //sat
-    for ( unsigned i = 0; i < passing.size(); i++)
-	if (passing[i].valid)
-	    passed.push_back(passing[i]);
-    passing.clear();
-    for ( unsigned i = 0; i < next.size(); i++)
-	if (next[i].valid)
-	    passing.push_back(next[i]);
-    next.clear();
-    cout << " Number of generated states: " << passing.size() << endl;
-    cout << " Number of states passed: " << passed.size() << endl;
-    int cv = 0;
-    for ( unsigned i = 0; i < passed.size(); i++)
-	if (passed[i].valid)  cv ++;
-    cout << " Number of valid states passed: " << cv << endl;
+    cout << "passing-" << size(passing_map) << endl;
+    cout << "passed-" << size(passed_map) << endl;
+    cout << "next-" << size(next_map) << endl;
+    from_a_2_b(passing_map, passed_map);
+    from_a_2_b(next_map, passing_map);
+    cout << " Number of generated states: " << size(passing_map) << endl;
+    cout << " Number of states passed: " << size(passed_map) << endl;
     cout << " ------------------------------------ \n";
 }
 
@@ -663,14 +1083,22 @@ void Model::bf_psy()
     int index = 0;
     cout << "step " << index++ << endl;
     NNC_Polyhedron base = base_cvx();
-    NNC_Polyhedron starting_point = location_cvx(com->init, &base);
+    invar_cvx(com->init, base);
+    base.time_elapse_assign(com->init->time_elapse);
+    invar_cvx(com->init, base);
 
-    starting_point.remove_higher_space_dimensions(var_list.vars.size());
+    if (base.is_empty())  {
+      cout << "Empty initial states\n";
+      exit(0);
+    }
+     
+    auto root = make_shared<pair_sc>(com->init->name, base, known_param_list,com->init->signature);
+    passing_map.find(root->signature)->second->push_back(root);
 
-    passing.push_back(pair_sc(com->init->name, starting_point));
+
     forward_a_step();
 
-    while(!next.empty()) {
+    while(size(next_map) != 0) {
 	cout << " ------------------------------------ \n";
 	cout << "step " << index++ << endl;
 	sat();
@@ -678,11 +1106,8 @@ void Model::bf_psy()
 	cout << " ------------------------------------ \n";
     
     }
+    cout << "The next is empty\n";
   
-    for ( unsigned i = 0; i < bad_paths.size(); i++) {
-	cout << "bad path : " << i << endl;
-	cout << bad_paths[i] << endl;
-    }
 }
 
 void Model::print_log(string lname)

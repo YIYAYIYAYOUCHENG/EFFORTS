@@ -7,6 +7,7 @@
 #include <limits>
 #include <exception>
 #include <sstream>
+#include <math.h>
 using namespace Parma_Polyhedra_Library;
 //namespace PPL = Parma_Polyhedra_Library;
 using namespace Parma_Polyhedra_Library::IO_Operators;
@@ -15,6 +16,20 @@ using namespace std;
 class Location : public LOCATION
 {
 public :
+        // It task number >= 10, populate does not work
+        void populate_signature() {
+          signature = 0;
+          for (string::iterator x = name.begin(); x != name.end(); x++) {
+            if ( *x >= '1' && *x <= '9') {
+              unsigned y = *x - '0';
+              y = pow(2, y-1);
+              signature = signature | y;
+            }
+          }
+        }
+        NNC_Polyhedron time_elapse;
+        NNC_Polyhedron invar_cvx;
+        unsigned int signature;
 	Location () {}
 	Location(const LOCATION &loc) {
 		name = loc.name;
@@ -59,6 +74,8 @@ public :
 
 // A help struct consisting of a label (string) and a NNC convex polyhedron
 struct pair_sc {
+  Param_list cvl; // C-style variable list
+  unsigned int signature;
   static int index;
   string state;
   string pre;
@@ -66,15 +83,37 @@ struct pair_sc {
   string label;
   NNC_Polyhedron cvx;
   NNC_Polyhedron widened_cvx;
+  bool tk_new;
+  shared_ptr<pair_sc> prior;
   vector<Coefficient> maximal_mns;
   vector<Coefficient> maximal_mds;
 
-  pair_sc(string s, NNC_Polyhedron cp) {
+  vector<shared_ptr<pair_sc> >  childern;
+
+  void clean_children() {
+    for (auto it = childern.begin(); it != childern.end(); it++) {
+      if ( ! (*it)->valid) continue;
+      //cout << (*it)->label << endl;
+      (*it)->empty_hard();
+      (*it)->clean_children();
+    }
+  }
+
+  void add_a_child(const shared_ptr<pair_sc> & ch) {
+    childern.push_back(ch);
+  }
+
+  pair_sc() {}
+
+  pair_sc(string s, const NNC_Polyhedron &cp, const Param_list & kpl, unsigned int sig=0) {
+    signature = sig;
     label = s;
     cvx = cp;
     valid=true;
+    tk_new = false;
+    prior = nullptr;
 
-    fill_maximals();
+    cvl = kpl;
     widen();
 
     stringstream ss;
@@ -83,82 +122,55 @@ struct pair_sc {
   }
 
   void empty() {
+    //valid = false;
+    cvx = NNC_Polyhedron(0, EMPTY);
+    //widened_cvx = NNC_Polyhedron(0, EMPTY);
+  }
+  void empty_hard() {
     valid = false;
     cvx = NNC_Polyhedron(0, EMPTY);
-    widened_cvx = NNC_Polyhedron(0, EMPTY);
+   // widened_cvx = NNC_Polyhedron(0, EMPTY);
   }
 
-  void fill_maximals() {
-    int d = cvx.space_dimension();
-    if ( d==0) return;
-    vector<Variable> vars;
-    for ( int i = 0; i < d; i++) {
-      vars.push_back(Variable(i));
-      Linear_Expression le = vars[i];
-      bool bounded = cvx.bounds_from_above(le);
-      Coefficient mn;
-      Coefficient md;
-      if (!bounded) {
-        mn = numeric_limits<int>::max();
-        md = 1;
-      }
-      else {
-        bool is_included;
-        cvx.maximize(le, mn, md, is_included);
-      }
-      maximal_mns.push_back(mn);
-      maximal_mds.push_back(md);
-    }
-  }
 
   void widen() {
     int d = cvx.space_dimension();
     if (d ==0) return;
+    Variables_Set vs;
     vector<Variable> vars;
     for ( int i = 0; i < 2*d; i++)
       vars.push_back(Variable(i));
+
     widened_cvx = cvx;
+
+    for ( int i = 0; i < d/2; i++) {
+      NNC_Polyhedron poly = cvx;
+      Constraint cs = (vars[i] >= atoi(cvl.params[3*i].value.c_str()));
+      poly.add_constraint(cs);
+      if ( ! poly.is_empty()) widened_cvx.unconstrain(vars[i]);
+    }
+
     widened_cvx.add_space_dimensions_and_embed(d);
-    Variables_Set vs;
     for (int i = 0; i < d; i++) {
-      vs.insert(vars[i]);
-      Constraint cs = (vars[i]>=vars[i+d]);
-      widened_cvx.add_constraint(cs);
+        vs.insert(vars[i]);
+        Constraint cs = (vars[i]>=vars[i+d]);
+        widened_cvx.add_constraint(cs);
     }
    
     widened_cvx.remove_space_dimensions(vs);
 
   }
   
-  // To check if two pairs equal.
-  bool equals(const pair_sc &sc) const {
-    if (label != sc.label) return false;
-    return cvx.contains(sc.cvx) && sc.cvx.contains(cvx);
-  }
-    
-  // To check if this pair contains another pair
-  //bool contains(const pair_sc &sc) const {
-  //  if (label != sc.label) return false;
-  //  return cvx.contains(sc.cvx);
-  //}
-  bool contains(const pair_sc &sc, bool sim=false) const {
+  bool contains(const shared_ptr<pair_sc> &sc, bool sim=false) const {
     if ( !sim) {
-      if (label != sc.label) return false;
-      return cvx.contains(sc.cvx);
+      if (label != sc->label) return false;
+      return cvx.contains(sc->cvx);
     }
-    if ( not_contains(sc))  return false;
-    return widened_cvx.contains(sc.widened_cvx);
+    if ( ! (signature == (signature | sc->signature)))
+      return false;
+    return widened_cvx.contains(sc->widened_cvx);
   }
   
-  // sc1 cannot contain sc2 if there is a maximal value from sc2
-  // that is larger than the corresponding maximal value in sc1
-  bool not_contains(const pair_sc &sc2) const {
-    for ( unsigned i = 0; i < maximal_mns.size(); i++)
-      if ( sc2.maximal_mns[i]/sc2.maximal_mds[i] > maximal_mns[i]/maximal_mds[i])
-        return true;
-    return false;
-  }
-
   // To print 
   void print() {
     cout << "==============================================\n";
@@ -166,38 +178,15 @@ struct pair_sc {
     cout << "Valid : " << valid << endl;
     cout << "Pre   : " << pre << endl;
     cout << "Loc   : " << label << endl;
-    cout << "cvx : \n"; 
-    cout << cvx << endl;
-    cout << "widened_cvx : \n"; 
-    cout << widened_cvx << endl;
+    cout << "Sig   : " << signature << endl;
+    //cout << "cvx : \n"; 
+    //cout << cvx << endl;
+    //cout << "widened_cvx : \n"; 
+    //cout << widened_cvx << endl;
     cout << "==============================================\n";
   }
 };
 
-class Path {
-
-public :
-	vector < pair_sc > sc_path; // a line of Node ids
-
-	// Since there could be multiple edges between two nodes,
-	// e_path is used to indetify a Path.
-    vector <EDGE> e_path;	
-    
-	NNC_Polyhedron poly; // The final synthesized poly of the path
-
-	// Return the number of nodes in the path
-    bool contains (const pair_sc &sc);
-
-    void push_back(const pair_sc &sc, const EDGE &e) ;
-
-    void push_back(const pair_sc &sc) ;
-
-    void pop_back() ;
-
-    void print() const ;
-
-	void clear() ;
-};
 
 // The xtool can deal with 3 kinds of operations :
 // reachability analysis, parameter synthesis and
@@ -210,7 +199,24 @@ class Model :public MODEL {
   bool fast_reach;
   bool fpfp_sim;
   bool op;
+  int cpus;
+  int N;
+  bool ci;
+  bool bp;
 public:
+
+  bool constrain_release1(const Location*l1);
+  bool constrain_release2(const shared_ptr<pair_sc> & sc);
+  //bool forward_release(NNC_Polyhedron & poly, unsigned t);
+  bool forward_release(const shared_ptr<pair_sc>& state, unsigned ti);
+  bool busy_period(unsigned sig);
+
+  map<unsigned int, shared_ptr< list< shared_ptr<pair_sc> > > > passed_map;
+  map<unsigned int, shared_ptr< list< shared_ptr<pair_sc> > > > next_map;
+  map<unsigned int, shared_ptr< list< shared_ptr<pair_sc> > > > passing_map;
+  bool contained_in(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> & sc, bool opt, bool debug);
+  void insert_into(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> &sc);
+  void from_a_2_b(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &a, map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &b);
 
   ModelAnalysisType type;
   
@@ -240,6 +246,12 @@ public:
 
   // to return the convex space representing initial constraints
   NNC_Polyhedron base_cvx();
+  void  invar_cvx(const Location *l, NNC_Polyhedron &cvx);
+  NNC_Polyhedron time_elapse_cvx(const Location *l);
+  void time_elapse_cvx(const Location *l, NNC_Polyhedron &cvx);
+  void  guard_cvx(const EDGE &e, NNC_Polyhedron &cvx);
+  void update_cvx(const EDGE &e, NNC_Polyhedron &cvx);
+  void update_cvx2(const EDGE &e, NNC_Polyhedron &cvx);
   
   NNC_Polyhedron location_cvx(const Location *l, const NNC_Polyhedron *pre_poly);
 	
@@ -260,6 +272,9 @@ public:
   void print_log(string lname=".log");
   void set_fpfp_sim() { fpfp_sim = true;}
   void set_op() { op = true;}
+  void set_critical_instants() { ci = true;}
+  void set_busy_period() { bp = true;}
+  void set_cpus(int m) { cpus = m; }
 
 //    /**************** IMCR **********************/
 //    vector<Path> feasible_path_set;

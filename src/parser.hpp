@@ -24,6 +24,7 @@
 #include <boost/spirit/repository/include/qi_confix.hpp>
 #include <boost/spirit/include/support_multi_pass.hpp>
 #include <boost/spirit/include/classic_position_iterator.hpp>
+#include <ppl.hh>
 
 // A help struct consisting of a pair of strings
 struct pair_ss {
@@ -176,6 +177,7 @@ struct UPDATE {
 // An edge in the PLHA
 struct EDGE
 {
+    Parma_Polyhedra_Library::NNC_Polyhedron guard_cvx;
     // the guard
     std::vector<EXPR> guard;
     // synchronization label
