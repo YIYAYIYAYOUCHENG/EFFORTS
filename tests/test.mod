@@ -12,44 +12,44 @@ loc idle: while True  wait { c1'=0, c2'=0, c3'=0}
 
 loc x3R : while c3>=0 & p3-D3<=0 wait { c1'=0, c2'=0, c3'=-1}
     when c3 = 0  do {} goto idle;
-    when c3>0 & p3-D3=0 do {} goto error;
+    when c3>=1 & p3-D3=0 do {} goto error;
     when p3-T3>=0  do {p3'=0, c3'=c3+C3}  goto x3R ;
-    when c3>0&p1-T1>=0   do {p1'=0, c1'=C1} goto x1R3W;
-    when c3>0&p2-T2>=0   do {p2'=0, c2'=C2} goto x2R3W;
+    when c3>=1&p1-T1>=0   do {p1'=0, c1'=C1} goto x1R3W;
+    when c3>=1&p2-T2>=0   do {p2'=0, c2'=C2} goto x2R3W;
 
-loc x2R : while c2>=0 & p2-D2<=0 wait { c1'=0, c2'=-1, c3'=0}
+loc x2R : while c2>=0 wait { c1'=0, c2'=-1, c3'=0}
     when c2 = 0  do {} goto idle;
     when p2-T2>=0  do {p2'=0, c2'=c2+C2}  goto x2R ;
-    when c2>0&p1-T1>=0   do {p1'=0, c1'=C1} goto x1R2W;
-    when c2>0&p3-T3>=0   do {p3'=0, c3'=C3} goto x2R3W;
+    when p1-T1>=0   do {p1'=0, c1'=C1} goto x1R2W;
+    when p3-T3>=0   do {p3'=0, c3'=C3} goto x2R3W;
 
-loc x2R3W : while c2>=0 & p2-D2<=0 & p3-D3<=0 wait { c1'=0, c2'=-1, c3'=0}
+loc x2R3W : while c2>=0 & p3-D3<=0 wait { c1'=0, c2'=-1, c3'=0}
     when c2 = 0  do {} goto x3R;
     when p3-D3=0 do {} goto error;
     when p2-T2>=0  do {p2'=0, c2'=c2+C2}  goto x2R3W ;
     when p3-T3>=0  do {p3'=0, c3'=c3+C3}  goto x2R3W;
-    when c2>0&p1-T1>=0   do {p1'=0, c1'=C1} goto x1R2W3W;
+    when p1-T1>=0   do {p1'=0, c1'=C1} goto x1R2W3W;
 
-loc x1R : while c1>=0 & p1-D1<=0 wait { c1'=-1, c2'=0, c3'=0}
+loc x1R : while c1>=0 wait { c1'=-1, c2'=0, c3'=0}
     when c1 = 0  do {} goto idle;
     when p1-T1>=0  do {p1'=0, c1'=c1+C1}  goto x1R ;
-    when c1>0&p2-T2>=0   do {p2'=0, c2'=C2} goto x1R2W;
-    when c1>0&p3-T3>=0   do {p3'=0, c3'=C3} goto x1R3W;
+    when p2-T2>=0   do {p2'=0, c2'=C2} goto x1R2W;
+    when p3-T3>=0   do {p3'=0, c3'=C3} goto x1R3W;
 
-loc x1R3W : while c1>=0 & p1-D1<=0 & p3-D3<=0 wait { c1'=-1, c2'=0, c3'=0}
+loc x1R3W : while c1>=0 & p3-D3<=0 wait { c1'=-1, c2'=0, c3'=0}
     when c1 = 0  do {} goto x3R;
     when p3-D3=0 do {} goto error;
     when p1-T1>=0  do {p1'=0, c1'=c1+C1}  goto x1R3W ;
     when p3-T3>=0  do {p3'=0, c3'=c3+C3}  goto x1R3W;
-    when c1>0&p2-T2>=0   do {p2'=0, c2'=C2} goto x1R2W3W;
+    when p2-T2>=0   do {p2'=0, c2'=C2} goto x1R2W3W;
 
-loc x1R2W : while c1>=0 & p1-D1<=0 & p2-D2<=0 wait { c1'=-1, c2'=0, c3'=0}
+loc x1R2W : while c1>=0 wait { c1'=-1, c2'=0, c3'=0}
     when c1 = 0  do {} goto x2R;
     when p1-T1>=0  do {p1'=0, c1'=c1+C1}  goto x1R2W ;
     when p2-T2>=0  do {p2'=0, c2'=c2+C2}  goto x1R2W;
-    when c1>0&p3-T3>=0   do {p3'=0, c3'=C3} goto x1R2W3W;
+    when p3-T3>=0   do {p3'=0, c3'=C3} goto x1R2W3W;
 
-loc x1R2W3W : while c1>=0 & p1-D1<=0 & p2-D2<=0 & p3-D3<=0 wait { c1'=-1, c2'=0, c3'=0}
+loc x1R2W3W : while c1>=0 & p3-D3<=0 wait { c1'=-1, c2'=0, c3'=0}
     when c1 = 0  do {} goto x2R3W;
     when p3-D3=0 do {} goto error;
     when p1-T1>=0  do {p1'=0, c1'=c1+C1}  goto x1R2W3W ;

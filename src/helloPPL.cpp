@@ -10,31 +10,28 @@ using namespace std;
 
 int main()
 {
-  NNC_Polyhedron poly(2);
-  Variable v0(0);
-  Variable v1(1);
-  Variable v2(2);
+  C_Polyhedron poly(2);
+  Variable x(0);
+  Variable y(1);
+  Variable z(2);
 
-  //Linear_Expression le;
-  //le += v;
-  Constraint cs = (v0<=10);
+  Constraint cs = (x >= 1);
   poly.add_constraint(cs);
-  cout << poly << endl;
-  cs = (v1>=10);
-  poly.add_constraint(cs);
-  cout << poly << endl;
 
-  //poly.unconstrain(v0);
-  cout << poly.space_dimension() << endl;
-  Variables_Set vs;
-  vs.insert(v1);
-  vs.insert(v0);
-  //vs.insert(v2);
-  poly.unconstrain(vs);
-  cout << poly << endl;
-  cout << poly.space_dimension() << endl;
-  cout << (vs.space_dimension() == 1) << endl;
-  cout << (vs.space_dimension()) << endl;
+  //poly.add_constraint(cs);
+  //cout << poly << endl;
+
+  ////poly.unconstrain(v0);
+  //cout << poly.space_dimension() << endl;
+  //Variables_Set vs;
+  //vs.insert(v1);
+  //vs.insert(v0);
+  ////vs.insert(v2);
+  //poly.unconstrain(vs);
+  //cout << poly << endl;
+  //cout << poly.space_dimension() << endl;
+  //cout << (vs.space_dimension() == 1) << endl;
+  //cout << (vs.space_dimension()) << endl;
 
   //cout << cs << endl;
 

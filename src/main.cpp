@@ -24,6 +24,8 @@ int main(int argc, char **argv)
     ("op", "Set this option to remove all redundent states") 
       ("newparser", "this uses the new parser")
       ("critical-instants", "this trigers the critical-instants reducing")
+      ("merge", "this trigers the mergeing")
+      ("fragments", "this trigers the fragmentation")
       ("busy-period", "trigers \"fast release\" during busy period")
       ("cpus", po::value<int>(), "The number of cpus")
     ;
@@ -63,6 +65,10 @@ int main(int argc, char **argv)
     mod.set_cpus(vm["cpus"].as<int>());
   if (vm.count("op"))
     mod.set_op();
+  if (vm.count("merge"))
+    mod.set_merge();
+  if (vm.count("fragments"))
+    mod.set_fragments();
   if (vm.count("busy-period"))
     mod.set_busy_period();
   //mod.print();
@@ -95,6 +101,7 @@ int main(int argc, char **argv)
     mod.type = FAST_REACH;
     try {
       mod.bf_psy();
+      //mod.df();
       cout << "The target location is not reached.\n";
     } 
     catch (int e) {

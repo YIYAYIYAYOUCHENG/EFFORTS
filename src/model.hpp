@@ -27,8 +27,10 @@ public :
             }
           }
         }
-        NNC_Polyhedron time_elapse;
-        NNC_Polyhedron invar_cvx;
+        Octagonal_Shape<int32_t> time_elapse;
+        C_Polyhedron time_elapse_cvx;
+        vector<int> elapse;
+        Octagonal_Shape<int32_t> invar_cvx;
         unsigned int signature;
 	Location () {}
 	Location(const LOCATION &loc) {
@@ -75,18 +77,25 @@ public :
 // A help struct consisting of a label (string) and a NNC convex polyhedron
 struct pair_sc {
   Param_list cvl; // C-style variable list
+  // "signature" provides a fast way to know each task's state, that is, idle, ready or runing.
   unsigned int signature;
   static int index;
+  // "state" is "s_"+"index"
   string state;
   string pre;
   bool valid;
+  bool tmp;
+  bool reach_dm;
+  // "label" is the location name
   string label;
-  NNC_Polyhedron cvx;
-  NNC_Polyhedron widened_cvx;
+  Octagonal_Shape<int32_t> cvx;
+  Octagonal_Shape<int32_t> widened_cvx;
+  C_Polyhedron exact_cvx;
+  bool exact;
   bool tk_new;
   shared_ptr<pair_sc> prior;
-  vector<Coefficient> maximal_mns;
-  vector<Coefficient> maximal_mds;
+  EDGE prior_edge;
+  list<shared_ptr<pair_sc> > holds;
 
   vector<shared_ptr<pair_sc> >  childern;
 
@@ -94,7 +103,8 @@ struct pair_sc {
     for (auto it = childern.begin(); it != childern.end(); it++) {
       if ( ! (*it)->valid) continue;
       //cout << (*it)->label << endl;
-      (*it)->empty_hard();
+      //(*it)->empty_hard();
+      (*it)->valid=false;
       (*it)->clean_children();
     }
   }
@@ -105,16 +115,20 @@ struct pair_sc {
 
   pair_sc() {}
 
-  pair_sc(string s, const NNC_Polyhedron &cp, const Param_list & kpl, unsigned int sig=0) {
+  pair_sc(string s, const Octagonal_Shape<int32_t> &cp, const Param_list & kpl, unsigned int sig=0) {
     signature = sig;
     label = s;
     cvx = cp;
     valid=true;
     tk_new = false;
+    tmp = false;
     prior = nullptr;
+    reach_dm = false;
 
     cvl = kpl;
     widen();
+    //exact_cvx = C_Polyhedron(cvx.space_dimension(), EMPTY);
+    exact = false;
 
     stringstream ss;
     ss << index++;
@@ -123,17 +137,18 @@ struct pair_sc {
 
   void empty() {
     //valid = false;
-    cvx = NNC_Polyhedron(0, EMPTY);
-    //widened_cvx = NNC_Polyhedron(0, EMPTY);
+    cvx = Octagonal_Shape<int32_t>(0, EMPTY);
+    //widened_cvx = Octagonal_Shape<int32_t>(0, EMPTY);
   }
   void empty_hard() {
     valid = false;
-    cvx = NNC_Polyhedron(0, EMPTY);
-   // widened_cvx = NNC_Polyhedron(0, EMPTY);
+    //cvx = Octagonal_Shape<int32_t>(0, EMPTY);
+   // widened_cvx = Octagonal_Shape<int32_t>(0, EMPTY);
   }
 
 
   void widen() {
+    cvx.strong_closure_assign();
     int d = cvx.space_dimension();
     if (d ==0) return;
     Variables_Set vs;
@@ -143,13 +158,6 @@ struct pair_sc {
 
     widened_cvx = cvx;
 
-    for ( int i = 0; i < d/2; i++) {
-      NNC_Polyhedron poly = cvx;
-      Constraint cs = (vars[i] >= atoi(cvl.params[3*i].value.c_str()));
-      poly.add_constraint(cs);
-      if ( ! poly.is_empty()) widened_cvx.unconstrain(vars[i]);
-    }
-
     widened_cvx.add_space_dimensions_and_embed(d);
     for (int i = 0; i < d; i++) {
         vs.insert(vars[i]);
@@ -157,10 +165,37 @@ struct pair_sc {
         widened_cvx.add_constraint(cs);
     }
    
+    //widened_cvx.strong_closure_assign();
     widened_cvx.remove_space_dimensions(vs);
+    widened_cvx.strong_closure_assign();
 
   }
   
+  void widen(Octagonal_Shape<int32_t> &poly) {
+    int d = cvx.space_dimension();
+    if (d ==0) return;
+    Variables_Set vs;
+    vector<Variable> vars;
+    for ( int i = 0; i < 2*d; i++)
+      vars.push_back(Variable(i));
+
+    for ( int i = 0; i < d/2; i++) {
+      Octagonal_Shape<int32_t> tmp = poly;
+      Constraint cs = (vars[i] >= atoi(cvl.params[3*i].value.c_str()));
+      tmp.add_constraint(cs);
+      if ( ! tmp.is_empty()) poly.unconstrain(vars[i]);
+    }
+
+    poly.add_space_dimensions_and_embed(d);
+    for (int i = 0; i < d; i++) {
+        vs.insert(vars[i]);
+        Constraint cs = (vars[i]>=vars[i+d]);
+        poly.add_constraint(cs);
+    }
+   
+    poly.remove_space_dimensions(vs);
+
+  }
   bool contains(const shared_ptr<pair_sc> &sc, bool sim=false) const {
     if ( !sim) {
       if (label != sc->label) return false;
@@ -176,17 +211,23 @@ struct pair_sc {
     cout << "==============================================\n";
     cout << "State : " << state << endl;
     cout << "Valid : " << valid << endl;
-    cout << "Pre   : " << pre << endl;
+    //cout << "Pre   : " << pre << endl;
+    if (prior != nullptr) {
+      cout << "Prior state : " << prior->state << endl;
+      cout << "Prior edge : "; prior_edge.print();
+    }
     cout << "Loc   : " << label << endl;
     cout << "Sig   : " << signature << endl;
-    //cout << "cvx : \n"; 
-    //cout << cvx << endl;
-    //cout << "widened_cvx : \n"; 
-    //cout << widened_cvx << endl;
+    cout << "cvx : \n"; 
+    cout << cvx << endl;
+    cout << "widened_cvx : \n"; 
+    cout << widened_cvx << endl;
     cout << "==============================================\n";
   }
 };
 
+
+typedef struct pair_sc State;
 
 // The xtool can deal with 3 kinds of operations :
 // reachability analysis, parameter synthesis and
@@ -203,18 +244,26 @@ class Model :public MODEL {
   int N;
   bool ci;
   bool bp;
+  bool merge;
+  bool frag;
 public:
+
+  bool depth_first(shared_ptr<State> & starter, int depth=0);
+  bool already_in_the_path(shared_ptr<State> & ss);
+  bool is_reachable(shared_ptr<State> end);
+  void df();
+  void build_exact_cvx(shared_ptr<State> last);
 
   bool constrain_release1(const Location*l1);
   bool constrain_release2(const shared_ptr<pair_sc> & sc);
-  //bool forward_release(NNC_Polyhedron & poly, unsigned t);
+  //bool forward_release(Octagonal_Shape<int32_t> & poly, unsigned t);
   bool forward_release(const shared_ptr<pair_sc>& state, unsigned ti);
   bool busy_period(unsigned sig);
 
   map<unsigned int, shared_ptr< list< shared_ptr<pair_sc> > > > passed_map;
   map<unsigned int, shared_ptr< list< shared_ptr<pair_sc> > > > next_map;
   map<unsigned int, shared_ptr< list< shared_ptr<pair_sc> > > > passing_map;
-  bool contained_in(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> & sc, bool opt, bool debug);
+  bool contained_in(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> & sc, bool opt);
   void insert_into(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> &sc);
   void from_a_2_b(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &a, map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &b);
 
@@ -242,20 +291,26 @@ public:
   
   int bound; // to bound the number of steps
 
-  vector<NNC_Polyhedron> bad_paths; // not a good name
+  vector<Octagonal_Shape<int32_t>> bad_paths; // not a good name
 
   // to return the convex space representing initial constraints
-  NNC_Polyhedron base_cvx();
-  void  invar_cvx(const Location *l, NNC_Polyhedron &cvx);
-  NNC_Polyhedron time_elapse_cvx(const Location *l);
-  void time_elapse_cvx(const Location *l, NNC_Polyhedron &cvx);
-  void  guard_cvx(const EDGE &e, NNC_Polyhedron &cvx);
-  void update_cvx(const EDGE &e, NNC_Polyhedron &cvx);
-  void update_cvx2(const EDGE &e, NNC_Polyhedron &cvx);
+  Octagonal_Shape<int32_t> base_cvx();
+  C_Polyhedron base_cvx0();
+  void  invar_cvx(const Location *l, Octagonal_Shape<int32_t> &cvx);
+  void  invar_cvx(const Location *l, C_Polyhedron &cvx);
+  C_Polyhedron time_elapse_cvx(const Location *l);
+  vector<int> elapse(const Location *l);
+  Octagonal_Shape<int32_t> time_elapse(const Location *l);
+  void time_elapse_cvx(const Location *l, Octagonal_Shape<int32_t> &cvx);
+  void  guard_cvx(const EDGE &e, Octagonal_Shape<int32_t> &cvx);
+  void update_cvx(const EDGE &e, Octagonal_Shape<int32_t> &cvx);
+  void  guard_cvx(const EDGE &e, C_Polyhedron  &cvx);
+  void update_cvx(const EDGE &e, C_Polyhedron  &cvx);
+  void update_cvx2(const EDGE &e, Octagonal_Shape<int32_t> &cvx);
   
-  NNC_Polyhedron location_cvx(const Location *l, const NNC_Polyhedron *pre_poly);
+  Octagonal_Shape<int32_t> location_cvx(const Location *l, const Octagonal_Shape<int32_t> *pre_poly);
 	
-  NNC_Polyhedron edge_cvx(const EDGE &edge, const NNC_Polyhedron &pre_poly);
+  Octagonal_Shape<int32_t> edge_cvx(const EDGE &edge, const Octagonal_Shape<int32_t> &pre_poly);
 
 	
   vector<pair_sc> next;
@@ -268,10 +323,12 @@ public:
   void bf_psy();
   void sat();
   void fast_save();
-  void restore_bad_paths(NNC_Polyhedron poly);
+  void restore_bad_paths(Octagonal_Shape<int32_t> poly);
   void print_log(string lname=".log");
   void set_fpfp_sim() { fpfp_sim = true;}
   void set_op() { op = true;}
+  void set_merge() { merge = true;}
+  void set_fragments() { frag = true;}
   void set_critical_instants() { ci = true;}
   void set_busy_period() { bp = true;}
   void set_cpus(int m) { cpus = m; }
@@ -279,7 +336,7 @@ public:
 //    /**************** IMCR **********************/
 //    vector<Path> feasible_path_set;
 //	
-//	NNC_Polyhedron ff_poly; // The final feasible polyhedron
+//	Octagonal_Shape<int32_t> ff_poly; // The final feasible polyhedron
 //
 //    vector<Path> unfeasible_path_set;
 //    

@@ -123,17 +123,26 @@ def build_invariant(l, cpus, fl=True) :
         if e == 1 :
             c = c + 1
             if fl :
-                if inv != "" :
-                    inv = inv + " & "
+                #if inv != "" :
+                    #inv = inv + " & "
                 if c <= cpus:
-                    inv = inv + "c{0}>=0 & p{0}-D{0}<=0".format(str(i+1))
+                    if i == len(l) - 1:
+                      if inv != "" :
+                          inv = inv + " & "
+                      inv = inv + "c{0}>=0 & p{0}-D{0}<=0".format(str(i+1))
+                    else:
+                      if inv != "" :
+                          inv = inv + " & "
+                      inv = inv + "c{0}>=0".format(str(i+1))
                 else :
-                    inv = inv + "p{0}-D{0}<=0".format(str(i+1))
+                    if i == len(l) - 1:
+                      if inv != "" :
+                          inv = inv + " & "
+                      inv = inv + "p{0}-D{0}<=0".format(str(i+1))
             else:
                 if c <= cpus:
-                    if inv != "" :
-                        inv = inv + " & "
-                    inv = inv + "c{0}>0".format(str(i+1))
+                    if i == len(l) - 1:
+                      inv = inv + "c{0}>=1&".format(str(i+1))
 
     return inv
 
@@ -325,7 +334,7 @@ def gen_sched(out, ntasks, cpus) :
         ## second set of edges: deadline misses
         for i,e in enumerate(act):
             if not e == len(l) : continue
-            out.write("    when c{0}>0 & p{0}-D{0}=0 do {{}} goto error;\n".
+            out.write("    when c{0}>=1 & p{0}-D{0}=0 do {{}} goto error;\n".
                   format(str(e)))
         for i,e in enumerate(wlist):
             if not e == len(l) : continue
@@ -341,7 +350,7 @@ def gen_sched(out, ntasks, cpus) :
                       format(str(e), state))
         for i,e in enumerate(inact):
             newstate = "x" + build_state(set_arrival(l, e-1), cpus)
-            out.write("    when {0}&p{1}-T{1}>=0   do {{p{1}'=0, c{1}'=C{1}}} goto {2};\n".
+            out.write("    when {0}p{1}-T{1}>=0   do {{p{1}'=0, c{1}'=C{1}}} goto {2};\n".
                      format(build_invariant(l, cpus, False),
                             str(e),
                             newstate))

@@ -4,6 +4,66 @@
 
 int pair_sc::index = 0;
 
+void time_elapse_assign(const std::vector<int>& v, Octagonal_Shape<int32_t> &os) {
+  typedef typename OR_Matrix<int32_t>::row_iterator row_iterator;
+  typedef typename OR_Matrix<int32_t>::row_reference_type row_reference;
+
+  const dimension_type n_rows = os.matrix.num_rows();
+  //const row_iterator m_begin = os.matrix.row_begin();
+  //const row_iterator m_end = os.matrix.row_end();
+
+  int32_t a = 1000;
+  for (dimension_type i = 0; i < v.size(); i++) {
+    int rate_i = v[i];
+    int rate_ii = -v[i];
+    const dimension_type di = 2*i;
+    //row_reference x_i = *(m_begin + di);
+    //row_reference x_ii = *(m_begin + (di + 1));
+
+    for (dimension_type j = 0; j < v.size(); j++) {
+      int rate_j = v[j];
+      int rate_jj = -v[j];
+      const dimension_type dj = 2*j;
+      if (rate_j - rate_i > 0 && di >= dj){
+      //if (di >= dj){
+        assign_r(os.matrix[di][dj], PLUS_INFINITY, ROUND_NOT_NEEDED);
+        //cout << "a=" << a << endl;
+        //assign_r(os.matrix[di][dj], a++, ROUND_NOT_NEEDED);
+        //cout << "<" << di << "," << dj << ">" << endl;
+        //cout << os.matrix << endl;
+      }
+      if (rate_jj - rate_i > 0 && (di>=dj+1 || di+1==dj+1)){
+      //if ((di>=dj+1 || di+1==dj+1)){
+        assign_r(os.matrix[di][dj+1], PLUS_INFINITY, ROUND_NOT_NEEDED);
+        //cout << "a=" << a << endl;
+        //assign_r(os.matrix[di][dj+1], a++, ROUND_NOT_NEEDED);
+        //cout << "<" << di << "," << dj+1 << ">" << endl;
+        //cout << os.matrix << endl;
+      }
+      if (rate_j - rate_ii > 0 && (di+1>=dj || di==dj) ){
+      //if ((di+1>=dj || di==dj) ){
+        assign_r(os.matrix[di+1][dj], PLUS_INFINITY, ROUND_NOT_NEEDED);
+        //cout << "a=" << a << endl;
+        //assign_r(os.matrix[di+1][dj], a++, ROUND_NOT_NEEDED);
+        //cout << "<" << di+1 << "," << dj << ">" << endl;
+        //cout << os.matrix << endl;
+      }
+      if (rate_jj - rate_ii > 0 && (di+1>=dj+1) ){
+      //if ((di+1>=dj+1) ){
+        assign_r(os.matrix[di+1][dj+1], PLUS_INFINITY, ROUND_NOT_NEEDED);
+        //cout << "a=" << a << endl;
+        //assign_r(os.matrix[di+1][dj+1], a++, ROUND_NOT_NEEDED);
+        //cout << "<" << di+1 << "," << dj+1 << ">" << endl;
+        //cout << os.matrix << endl;
+      }
+    }
+
+  }
+  os.strong_coherence_assign();
+  os.strong_closure_assign();
+  //cout << "*************" << endl;
+  //cout << os.matrix << endl;
+}
 static bool find(pair_ss &ss, vector<pair_ss>&v)
 {
     for ( unsigned i = 0; i < v.size(); i++)
@@ -92,6 +152,8 @@ Model::Model(const MODEL &mod)
     cpus = 2;
     ci = false;
     bp = false;
+    merge = false;
+    frag = false;
     // variable list
     var_list = mod.var_list;
     // reserved variable list has been abandoned
@@ -154,7 +216,9 @@ Model::Model(const MODEL &mod)
 	    (*it)->outgoing[i].index = UniqueIndex::get_next_index();
             //(*it)->outgoing[i].guard_cvx = guard_cvx( (*it)->outgoing[i] );
         }
-        (*it)->time_elapse = time_elapse_cvx(*it);
+        (*it)->elapse = elapse(*it);
+        (*it)->time_elapse = time_elapse(*it);
+        (*it)->time_elapse_cvx = time_elapse_cvx(*it);
 
         passed_map[(*it)->signature] = make_shared< list<shared_ptr<pair_sc> > > ();
         passing_map[(*it)->signature] = make_shared< list<shared_ptr<pair_sc> > > ();
@@ -165,7 +229,7 @@ Model::Model(const MODEL &mod)
     /** 
      * for now, let's focus on reachability analysis
      **/
-    //ff_poly = NNC_Polyhedron(0, EMPTY);
+    //ff_poly = Octagonal_Shape<int32_t>(0, EMPTY);
     //line = 0;
 }
 
@@ -175,11 +239,11 @@ Model::~Model()
 	delete automata[i];
 }
 
-NNC_Polyhedron Model::base_cvx() {
+C_Polyhedron Model::base_cvx0() {
   
   int dim = var_list.vars.size();
   
-  NNC_Polyhedron poly(dim);
+  C_Polyhedron poly(dim);
   vector<Variable> Vars;
   
   for ( int i = 0; i < dim; i++)
@@ -216,10 +280,51 @@ NNC_Polyhedron Model::base_cvx() {
 
 }
 
-void Model::invar_cvx(const Location *l, NNC_Polyhedron &cvx) {
+Octagonal_Shape<int32_t> Model::base_cvx() {
+  
+  int dim = var_list.vars.size();
+  
+  Octagonal_Shape<int32_t> poly(dim);
+  vector<Variable> Vars;
+  
+  for ( int i = 0; i < dim; i++)
+    Vars.push_back(Variable(i));
+
+  for ( vector<EXPR>::iterator it = init.constraints.begin();
+      it != init.constraints.end(); it++) {
+
+    Linear_Expression le;
+    for ( int i = 0; i < known_param_list.params.size(); i++) {
+      int co = it->find(known_param_list.params[i].name);
+      if ( co != 0)
+        le += atof (known_param_list.params[i].value.c_str()) * co;
+    }
+    for ( int i = 0; i < dim; i++) {
+      int co = it->find(var_list.vars[i]);
+      if ( co != 0)
+        le += Vars[i] * it->find(var_list.vars[i]);
+    }	
+    
+    int right = atof(it->value.c_str());
+    
+    Constraint cs;
+    if ( it->op == "<") cs = ( le < right);
+    if ( it->op == "=") cs = ( le == right);
+    if ( it->op == "<=") cs = ( le <= right);
+    if ( it->op == ">") cs = ( le > right);
+    if ( it->op == ">=") cs = ( le >= right);
+    poly.add_constraint(cs);
+
+  }
+  
+  return poly;
+
+}
+
+void Model::invar_cvx(const Location *l, Octagonal_Shape<int32_t> &cvx) {
   
     int dim = var_list.vars.size();
-    //NNC_Polyhedron cvx(dim);
+    //Octagonal_Shape<int32_t> cvx(dim);
   
     vector<Variable> Vars;
     for (int i = 0; i < dim; i++)
@@ -255,12 +360,50 @@ void Model::invar_cvx(const Location *l, NNC_Polyhedron &cvx) {
   
 }
 
-void Model::guard_cvx(const EDGE &edge, NNC_Polyhedron &cvx) {
+void Model::invar_cvx(const Location *l, C_Polyhedron &cvx) {
+  
+    int dim = var_list.vars.size();
+    //Octagonal_Shape<int32_t> cvx(dim);
+  
+    vector<Variable> Vars;
+    for (int i = 0; i < dim; i++)
+	Vars.push_back(Variable(i));
+
+    // invariant
+    for ( vector<EXPR>::const_iterator it = l->invar.begin(); 
+        it != l->invar.end(); it++) {
+
+	Linear_Expression le;
+
+        for ( int i = 0; i < known_param_list.params.size(); i++) {
+          int co = it->find(known_param_list.params[i].name);
+          if ( co != 0)
+            le += co * atof (known_param_list.params[i].value.c_str());
+        }
+	for ( int i = 0; i < dim; i++) {
+          int co = it->find(var_list.vars[i]);
+          if ( co != 0)
+	    le += Vars[i] * it->find(var_list.vars[i]);
+	}
+    
+	int right = atof(it->value.c_str());
+    
+	Constraint cs;
+	if ( it->op == "<") cs = ( le < right);
+	if ( it->op == "=") cs = ( le == right);
+	if ( it->op == "<=") cs = ( le <= right);
+	if ( it->op == ">") cs = ( le > right);
+	if ( it->op == ">=") cs = ( le >= right);
+	cvx.add_constraint(cs);
+    }
+  
+}
+void Model::guard_cvx(const EDGE &edge, Octagonal_Shape<int32_t> &cvx) {
   
     int dim = var_list.vars.size();
   
     const EDGE *it = &edge;
-    //NNC_Polyhedron cvx(dim);
+    //Octagonal_Shape<int32_t> cvx(dim);
   
     vector<Variable> Vars;
     for ( int i = 0; i < dim; i++)
@@ -294,7 +437,45 @@ void Model::guard_cvx(const EDGE &edge, NNC_Polyhedron &cvx) {
   
 }
 
-void Model::update_cvx2(const EDGE &edge, NNC_Polyhedron &cvx) {
+void Model::guard_cvx(const EDGE &edge, C_Polyhedron &cvx) {
+  
+    int dim = var_list.vars.size();
+  
+    const EDGE *it = &edge;
+    //Octagonal_Shape<int32_t> cvx(dim);
+  
+    vector<Variable> Vars;
+    for ( int i = 0; i < dim; i++)
+	Vars.push_back(Variable(i));
+  
+    // guard
+    for ( vector<EXPR>::const_iterator iit = it->guard.begin(); 
+        iit != it->guard.end(); iit++) {
+	Linear_Expression le;
+        for ( int i = 0; i < known_param_list.params.size(); i++) {
+          int co = iit->find(known_param_list.params[i].name);
+          if ( co != 0) 
+            le += atof (known_param_list.params[i].value.c_str()) * co;
+        }
+	for ( int i = 0; i < dim; i++) {
+          int co = iit->find(var_list.vars[i]);
+          if ( co != 0)
+	    le += Vars[i] * co;
+	}
+    
+	int right = atof(iit->value.c_str());
+	Constraint cs;
+	if ( iit->op == "<") cs = ( le < right);
+	if ( iit->op == "=") cs = ( le == right);
+	if ( iit->op == "<=") cs = ( le <= right);
+	if ( iit->op == ">") cs = ( le > right);
+	if ( iit->op == ">=") cs = ( le >= right);
+	cvx.add_constraint(cs);
+  
+    }
+  
+}
+void Model::update_cvx2(const EDGE &edge, Octagonal_Shape<int32_t> &cvx) {
 
   
     int dim = var_list.vars.size();
@@ -352,7 +533,7 @@ void Model::update_cvx2(const EDGE &edge, NNC_Polyhedron &cvx) {
     cvx.remove_space_dimensions(vs);
 }
 
-void Model::update_cvx(const EDGE &edge, NNC_Polyhedron &cvx) {
+void Model::update_cvx(const EDGE &edge, Octagonal_Shape<int32_t> &cvx) {
 
   
     int dim = var_list.vars.size();
@@ -419,11 +600,93 @@ void Model::update_cvx(const EDGE &edge, NNC_Polyhedron &cvx) {
   
 }
 
-NNC_Polyhedron Model::time_elapse_cvx(const Location *l) {
+void Model::update_cvx(const EDGE &edge, C_Polyhedron &cvx) {
+
+  
+    int dim = var_list.vars.size();
+  
+    const EDGE *it = &edge;
+  
+    vector<Variable> Vars;
+    for ( int i = 0; i <= dim; i++)
+	Vars.push_back(Variable(i));
+
+    int p, c;
+    Variables_Set vs;
+
+    for ( int i = 0; i < dim; i++) {
+
+	bool u_flag = false;
+	UPDATE update;
+
+	for ( vector<UPDATE>::const_iterator uit = it->updates.begin(); 
+	      uit != it->updates.end(); uit++) {
+	    if (var_list.vars[i] == uit->left) {
+		u_flag = true;
+		update = *uit;
+		break;
+	    }
+	}
+
+	if (!u_flag) {
+	    continue;
+	}
+
+        if ( i < dim/2) {
+          cvx.unconstrain(Vars[i]);
+          Constraint cs1 = (Vars[i] == 0);
+          cvx.add_constraint(cs1);
+          i = dim/2 - 1;
+
+          continue;
+	}
+
+
+        cvx.expand_space_dimension(Vars[i], 1);
+
+        cvx.unconstrain(Vars[i]);
+
+	Linear_Expression le;
+	for ( unsigned j = 0; j < known_param_list.params.size(); j++) {
+	    le += atof (known_param_list.params[j].value.c_str()) * 
+		update.find(known_param_list.params[j].name);
+	}
+	for ( int j = dim; j <= dim; j++) {
+	    le += Vars[j] * update.find(var_list.vars[i]);
+	}
+	le += update.get_cons();
+
+	Constraint cs2 = (Vars[i] == le);
+	cvx.add_constraint(cs2);
+
+
+        cvx.remove_higher_space_dimensions(dim);
+        return;
+
+    }
+  
+}
+
+vector<int> Model::elapse(const Location *l) {
+  
+  
+    vector<int> v; 
+    // time elapse
+    for ( int i = 0; i < var_list.vars.size(); i++) {
+	int i_co = l->rate.find(var_list.vars[i]);
+    
+        v.push_back(i_co);
+    }
+  
+    return v;
+
+}
+
+Octagonal_Shape<int32_t> Model::time_elapse(const Location *l) {
   
   
     int dim = var_list.vars.size();
-    NNC_Polyhedron cvx (dim);
+    Octagonal_Shape<int32_t>  cvx (dim);
   
     vector<Variable> Vars;
     for (int i = 0; i < dim; i++)
@@ -441,7 +704,29 @@ NNC_Polyhedron Model::time_elapse_cvx(const Location *l) {
 
 }
 
-void Model::time_elapse_cvx(const Location *l, NNC_Polyhedron &cvx) {
+C_Polyhedron Model::time_elapse_cvx(const Location *l) {
+  
+  
+    int dim = var_list.vars.size();
+    C_Polyhedron cvx (dim);
+  
+    vector<Variable> Vars;
+    for (int i = 0; i < dim; i++)
+	Vars.push_back(Variable(i));
+
+    // time elapse
+    for ( int i = 0; i < dim; i++) {
+	int i_co = l->rate.find(var_list.vars[i]);
+    
+	Constraint cs = (Vars[i] == i_co);
+	cvx.add_constraint(cs);
+    }
+  
+    return cvx;
+
+}
+
+void Model::time_elapse_cvx(const Location *l, Octagonal_Shape<int32_t> &cvx) {
   
   
     int dim = var_list.vars.size();
@@ -471,29 +756,29 @@ void Model::time_elapse_cvx(const Location *l, NNC_Polyhedron &cvx) {
 
 }
 
-NNC_Polyhedron Model::location_cvx(const Location *l, const NNC_Polyhedron *pre_cvx) {
+Octagonal_Shape<int32_t> Model::location_cvx(const Location *l, const Octagonal_Shape<int32_t> *pre_cvx) {
   
     // a path leading to "target" is found
     if( l->is_bad && type != REACH) {
 
 	if ( type == FAST_REACH) {
 	    //cout << "The target location is reached\n";
-	    //return NNC_Polyhedron(0, EMPTY);
+	    //return Octagonal_Shape<int32_t>(0, EMPTY);
 	    //exit (0);
 	    fast_reach = true;
 	}
 	else {
-	    NNC_Polyhedron bad = *pre_cvx;
+	    Octagonal_Shape<int32_t> bad = *pre_cvx;
 	    bad.remove_higher_space_dimensions(param_list.params.size());
 	    //if (bad.is_empty()) 
-	    //return NNC_Polyhedron(0, EMPTY);
+	    //return Octagonal_Shape<int32_t>(0, EMPTY);
 	    restore_bad_paths(bad);
-	    return NNC_Polyhedron(0, EMPTY);
+	    return Octagonal_Shape<int32_t>(0, EMPTY);
 	}
 
     }
   
-    NNC_Polyhedron cvx (*pre_cvx);
+    Octagonal_Shape<int32_t> cvx (*pre_cvx);
     int num_p = param_list.params.size();
     int num_v = var_list.vars.size();
     //int dim = 2*num_v + num_p + 1;
@@ -587,14 +872,14 @@ NNC_Polyhedron Model::location_cvx(const Location *l, const NNC_Polyhedron *pre_
 
 }
 
-NNC_Polyhedron Model::edge_cvx(const EDGE &edge, const NNC_Polyhedron &pre_poly) {
+Octagonal_Shape<int32_t> Model::edge_cvx(const EDGE &edge, const Octagonal_Shape<int32_t> &pre_poly) {
   
     int num_p = param_list.params.size();
     int num_v = var_list.vars.size();
     //int dim = 2*num_v + num_p + 1;
   
     const EDGE *it = &edge;
-    NNC_Polyhedron cvx = pre_poly;
+    Octagonal_Shape<int32_t> cvx = pre_poly;
     string dest = it->dest;
   
     vector<Variable> Vars;
@@ -691,39 +976,98 @@ NNC_Polyhedron Model::edge_cvx(const EDGE &edge, const NNC_Polyhedron &pre_poly)
 }
 
 bool Model::contained_in( map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, 
-   const shared_ptr<pair_sc> & sc, bool opt, bool debug) {
+   const shared_ptr<pair_sc> & sc, bool opt) {
 
   for( auto iitm = m.cbegin(); iitm != m.cend(); iitm ++) {
 
-          if (sc->signature != (sc->signature | iitm->first)) continue;
+          if (iitm->first != (sc->signature | iitm->first)) continue;
 
 	  for ( auto il = iitm->second->begin(); il != iitm->second->end(); il++) { 
-	      if( (*il)->contains(sc, fpfp_sim))
-		      return true;	    
+            
+              //if ( ! (*il)->valid ) continue;
+              if (  (*il)->reach_dm ) {
+                continue;
+              }
+              
+	      if( (*il)->contains(sc, fpfp_sim)) {
+                (*il)->holds.push_back(sc);
+		return true;	    
+              }
+
+              //if ( sc->signature == iitm->first && m == next_map &&  merge) {
+
+              //  Octagonal_Shape<int32_t> p_hull = sc->cvx;
+              //  if ( ! p_hull.upper_bound_assign_if_exact((*il)->cvx))
+              //    continue;
+              //  Octagonal_Shape<int32_t> tmp = p_hull;
+              //  p_hull.difference_assign(sc->cvx);
+              //  p_hull.difference_assign((*il)->cvx);
+              //  if (p_hull.is_empty()) {
+              //    //cout << " merge works in next\n";
+              //    (*il)->cvx = tmp;
+              //    (*il)->widen();
+              //    return true;
+              //  }
+
+              //}
+
           }
   }
 
+  //if (frag && m == next_map) {
+  //  Octagonal_Shape<int32_t> poly = sc->widened_cvx;
+  //  for( auto iitm = m.cbegin(); iitm != m.cend(); iitm ++) {
+
+  //          //if (sc->signature != (sc->signature | iitm->first)) continue;
+  //          if (sc->signature != iitm->first) continue;
+
+  //    	    for ( auto il = iitm->second->begin(); il != iitm->second->end(); il++) { 
+  //              if ( (*il)->widened_cvx.contains(poly))  {
+  //                string tab;
+  //                if ( m == passed_map) tab = "passed";
+  //                if ( m == passing_map) tab = "passing";
+  //                if ( m == next_map) tab = "next";
+  //                //cout << "fragmentation works in " << tab << "\n";
+  //                return true;
+  //              }
+  //              
+  //              //if ( ! poly.poly_hull_assign_if_exact((*il)->widened_cvx))
+  //              //  continue;
+  //              //poly.poly_difference_assign((*il)->widened_cvx);
+
+  //              Octagonal_Shape<int32_t> inter = poly;
+  //              inter.intersection_assign((*il)->widened_cvx);
+  //              if (inter.is_empty())
+  //                continue;
+  //              poly.poly_difference_assign(inter);
+
+  //          }
+  //  }
+  //}
+              
   if ( !opt) return false;
 
   for( auto iitm = m.begin(); iitm != m.end(); iitm ++) {
 
-          if (iitm->first != (sc->signature | iitm->first)) continue;
+          if (sc->signature != (sc->signature | iitm->first)) continue;
 
           auto ed = iitm->second;
 
 	  //for ( unsigned i = 0; i < ed->size(); i++) { 
 	  for ( auto il = ed->begin(); il != ed->end(); il++) { 
-              if ( ! (*il)->valid) {
-                if (!debug)
-                  ed->erase(il++);
-                continue;
-              }
+              //if ( ! (*il)->valid) {
+              //  if ( m != passing_map)
+              //    ed->erase(il++);
+              //  continue;
+              //}
 	      if( sc->contains(*il, fpfp_sim)) {
-                (*il)->clean_children();
-                if (debug)
-                  (*il)->valid = false;
-                else
-                  ed->erase(il++);
+                sc->holds.push_back(*il);
+                
+                //(*il)->clean_children();
+                //if ( m == passing_map)
+                //  (*il)->valid = false;
+                //else
+                ed->erase(il++);
               }
 	  }
   }
@@ -732,9 +1076,35 @@ bool Model::contained_in( map<unsigned int, shared_ptr<list< shared_ptr<pair_sc>
 
 void Model::insert_into(map<unsigned int, shared_ptr<list< shared_ptr<pair_sc> > > > &m, const shared_ptr<pair_sc> &sc) {
 
-  auto v = m.find(sc->signature)->second;
+  //if ( ! (merge && m == passed_map) ) {
+    auto v = m.find(sc->signature)->second;
+    v->push_back(sc);
+    return;
+  //}
 
-  v->push_back(sc);
+  //for( auto iitm = m.cbegin(); iitm != m.cend(); iitm ++) {
+
+  //        if (sc->signature != (sc->signature | iitm->first)) continue;
+
+  //        for ( auto il = iitm->second->begin(); il != iitm->second->end(); il++) { 
+  //            
+  //            Octagonal_Shape<int32_t> p_hull = sc->widened_cvx;
+  //            if ( ! p_hull.poly_hull_assign_if_exact((*il)->widened_cvx))
+  //              continue;
+  //            Octagonal_Shape<int32_t> tmp = p_hull;
+  //            p_hull.poly_difference_assign(sc->widened_cvx);
+  //            p_hull.poly_difference_assign((*il)->widened_cvx);
+  //            if (p_hull.is_empty()) {
+  //              cout << " merge works in passed\n";
+  //              (*il)->widened_cvx = tmp;
+  //              return;
+  //            }
+
+  //        }
+  //}
+  //auto v = m.find(sc->signature)->second;
+  //v->push_back(sc);
+
 }
 
 static int count(int sig, int n) {
@@ -757,7 +1127,7 @@ bool Model::constrain_release2(const shared_ptr<pair_sc> & sc) {
   for (int i = 1; i < N ; i++) {
     if ( (sc->signature & (unsigned)pow(2,i-1)) == 0)
       continue;
-    NNC_Polyhedron cvx = sc->cvx;
+    Octagonal_Shape<int32_t> cvx = sc->cvx;
     Variable v(i-1);
     Constraint cs = ( v == 0 );
     cvx.add_constraint(cs);
@@ -780,7 +1150,7 @@ bool Model::forward_release(const shared_ptr<pair_sc>& state, unsigned ti) {
 
   Variable v(ti-1);
 
-  NNC_Polyhedron poly = state->cvx;
+  Octagonal_Shape<int32_t> poly = state->cvx;
 
   // current state contains p_i == T_i
   Constraint cs = ( v == atoi(known_param_list.params[3*(ti-1)].value.c_str()));
@@ -859,6 +1229,94 @@ bool Model::forward_release(const shared_ptr<pair_sc>& state, unsigned ti) {
 
 static int size(const map<unsigned int, shared_ptr<list<shared_ptr<pair_sc> > > > &m);
 
+bool Model::already_in_the_path(shared_ptr<State> & ss)
+{
+  auto p = ss->prior;
+  while ( p != nullptr)
+  {
+    if (p->label == ss->label && p->exact_cvx.contains(ss->exact_cvx))// && ss->cvx.contains(p->cvx))
+      return true;
+    p = p->prior;
+  }
+  return false;
+}
+
+static void print_states(shared_ptr<State> & ss)
+{
+  vector<shared_ptr<State> > route;
+  auto p = ss;
+  while ( p!= nullptr) {
+    route.push_back(p);
+    p = p->prior;
+  }
+  for ( auto it = route.rbegin(); it != route.rend(); it++)
+    cout << (*it)->label << " => ";
+}
+
+bool Model::depth_first(shared_ptr<State> & starter, int depth)
+{
+  cout << "depth : " << depth << endl;
+  Location *l = com->get_a_location(starter->label);
+  for ( vector <EDGE>::const_iterator it = l->outgoing.begin(); it != l->outgoing.end(); it++) {
+    //cout << starter->label << " => " << it->dest << endl;
+    //print_states(starter); cout << it->dest << endl;
+    
+    Location *tmp = com->get_a_location(it->dest);
+    Octagonal_Shape<int32_t> poly = starter->cvx;
+    C_Polyhedron exact_poly = starter->exact_cvx;
+    guard_cvx(*it, poly);
+    guard_cvx(*it, exact_poly);
+    if( poly.is_empty()) continue;
+    update_cvx(*it, poly);
+    update_cvx(*it, exact_poly);
+      
+    invar_cvx(tmp, poly);
+    invar_cvx(tmp, exact_poly);
+    if( poly.is_empty()) continue;
+    poly.strong_closure_assign();
+    time_elapse_assign(tmp->elapse, poly);
+    exact_poly.time_elapse_assign(tmp->time_elapse_cvx);
+    invar_cvx(tmp, poly);
+    invar_cvx(tmp, exact_poly);
+    if( poly.is_empty()) continue;
+
+    auto sc = make_shared<pair_sc>(it->dest, poly, known_param_list, tmp->signature);
+    sc->prior = starter;
+    sc->prior_edge = *it;
+    sc->exact_cvx = exact_poly;
+
+    if (contained_in(passed_map, sc, false))
+      continue;
+    if ( already_in_the_path(sc)) continue;
+
+    if ( tmp->is_bad){
+      starter->reach_dm = true;
+      auto p = starter->prior;
+      while ( p != nullptr) {
+        if ( p->reach_dm) break;
+        p->reach_dm = true;
+        p = p->prior;
+      }
+      if ( !sc->exact_cvx.is_empty())
+        throw 0;
+      else {cout << "false alarm " << endl; continue;}
+    }
+
+    depth_first(sc, depth + 1);
+  }
+  if ( ! starter->reach_dm){
+    if (contained_in(passed_map, starter, true)) return false; 
+  }
+  else{
+    if (contained_in(passed_map, starter, false)) return false; 
+  }
+  insert_into(passed_map, starter);
+
+  cout << " size of passed map : " << size (passed_map) << endl;
+  return starter->reach_dm;
+ 
+}
+
 void Model::forward_a_step() {
 
   int K = 0;
@@ -868,6 +1326,7 @@ void Model::forward_a_step() {
 
     for (auto il = ing->begin(); il != ing->end(); il++) {
         if ( ! (*il)->valid) continue;
+        if ( (*il)->reach_dm) continue;
 	//
 	Location *l = com->get_a_location((*il)->label);
     
@@ -879,59 +1338,63 @@ void Model::forward_a_step() {
 	      it != l->outgoing.end(); it++) {
             
             if ( ! (*il)->valid) break;
+            if ( (*il)->reach_dm) continue;
 
 	    Location *tmp = com->get_a_location(it->dest);
             
-            if( ci) {
-              if ( (l->signature & (unsigned)pow(2,N-1)) == 0 && (tmp->signature & (unsigned)pow(2, N-1)) != 0) {
-                if ( constrain_release1(l)) {
-                  continue;
-                }
-                if ( count(l->signature, N) != cpus) continue;
-                if ( constrain_release2(*il)) {
-                  continue;
-                }
-              }
-              else if ( (l->signature & (unsigned)pow(2,N-1)) != 0 && (tmp->signature & (unsigned)pow(2,N-1))==0
-                  && !tmp->is_bad)
-                continue;
-            }
 
-            if (bp) {
-
-              // now, let's consider the busy period while tk is waiting
-              if ( (l->signature & (unsigned)pow(2,N-1)) != 0 && count(tmp->signature,N) > count(l->signature,N)
-                  && count(l->signature,N)>cpus) {
-                int ti = 0;
-                for (int h = 1; h < N; h++)
-                  if ( (l->signature & (unsigned)pow(2,h-1)) == 0 && (tmp->signature & (unsigned)pow(2, h-1)) != 0) {
-                    ti = h;
-                    break;
-                  }
-                //cout << "before judgement " << (*il)->label << "-" << tmp->name << endl;
-                if ( forward_release(*il, ti)) {
-                  //cout << (*il)->label << "-" << tmp->name << endl;
-                  continue;
-                }
-              }
-
-            }
-
-	    NNC_Polyhedron poly = (*il)->cvx;
+	    Octagonal_Shape<int32_t> poly = (*il)->cvx;
+            C_Polyhedron exact_poly = (*il)->exact_cvx;
             guard_cvx(*it, poly);
+            guard_cvx(*it, exact_poly);
 	    if( poly.is_empty()) continue;
+	    //if( exact_poly.is_empty()) continue;
 	    update_cvx(*it, poly);
+	    update_cvx(*it, exact_poly);
       
             invar_cvx(tmp, poly);
+            invar_cvx(tmp, exact_poly);
 	    if( poly.is_empty()) continue;
-            poly.time_elapse_assign(tmp->time_elapse);
+	    //if( exact_poly.is_empty()) continue;
+            poly.strong_closure_assign();
+            //poly.time_elapse_assign(tmp->time_elapse);
+            exact_poly.time_elapse_assign(tmp->time_elapse_cvx);
+            time_elapse_assign(tmp->elapse, poly);
+            //poly.strong_closure_assign();
             invar_cvx(tmp, poly);
+            invar_cvx(tmp, exact_poly);
             
 	    if( poly.is_empty()) continue;
+	    //if( exact_poly.is_empty()) continue;
 
+	    auto sc = make_shared<pair_sc>(it->dest, poly, known_param_list, tmp->signature);
+            sc->prior = (*il);
+            sc->prior_edge = *it;
+            sc->exact_cvx = exact_poly;
+            sc->exact = true;
 	    if( type==FAST_REACH && tmp->is_bad) {
-
-		pair_sc sc(it->dest,poly, known_param_list, tmp->signature);
+                //if ( ! is_reachable(sc)) { 
+                if ( sc->exact_cvx.is_empty()) {
+                  cout << (*il)->label << " false alarm\n"; 
+                  auto p = sc->prior;
+                  while ( p!= nullptr) {
+                    if ( p->reach_dm) break;
+                    p->reach_dm = true;
+                    //cout << p->label << endl;
+                    cout << "size of holds " << p->holds.size() << endl;
+                    for ( auto pt = p->holds.begin(); pt != p->holds.end(); pt++) {
+                      if (contained_in(passing_map, *pt, false)) continue;
+                      if (contained_in(next_map, *pt, true)) continue;
+                      if (contained_in(passed_map, *pt, false)) continue;
+                      cout << " not contained in \n";
+                      insert_into(next_map, *pt);
+                    }
+                    p->holds.clear();
+                    p = p->prior;
+                  }
+                  continue;
+                }
+		//pair_sc sc(it->dest,poly, known_param_list, tmp->signature);
 		//sc.pre = passing[k].state;
 		//next.push_back(sc);
 		cout << "The target is reached. Fast saving ...\n";
@@ -940,24 +1403,107 @@ void Model::forward_a_step() {
 	    }
 
 
-	    auto sc = make_shared<pair_sc>(it->dest, poly, known_param_list, tmp->signature);
-            if ( (l->signature & (unsigned)pow(2,N-1)) == 0 && (tmp->signature & (unsigned)pow(2, N-1)) != 0)
-              sc->tk_new = true;
-
-            if (contained_in(passing_map, sc, op, true)) continue;
-            if (contained_in(next_map, sc, true, false)) continue;
-            if (contained_in(passed_map, sc, op, false)) continue;
+            if (already_in_the_path(sc)) continue;
+            //if (contained_in(passing_map, sc, false)) continue;
+            //if (contained_in(next_map, sc, true)) continue;
+            if (contained_in(passed_map, sc, false)) continue;
             (*il)->add_a_child(sc);
             insert_into(next_map, sc);
-            sc->prior = (*il);
         }
     }
   }
 }
-    
-void Model::restore_bad_paths(NNC_Polyhedron poly)
+
+//static void release_holds(shared_ptr<State> ss) {
+//    for ( auto pt = ss->holds.begin(); pt != ss->holds.end(); pt++) {
+//      if (contained_in(passing_map, *pt, false)) continue;
+//      if (contained_in(next_map, *pt, true)) continue;
+//      if (contained_in(passed_map, *pt, false)) continue;
+//      insert_into(next_map, *pt);
+//    }
+//    ss->holds.clear();
+//}
+
+bool Model::is_reachable(shared_ptr<State> last)
 {
-    vector<NNC_Polyhedron> tmp = bad_paths;
+  list<shared_ptr<State> > route;
+  route.insert(route.begin(),last);
+  while(route.front()->prior != nullptr) {
+    auto prior = route.front()->prior;
+    route.insert(route.begin(), prior);
+  }
+
+
+  C_Polyhedron cvx = base_cvx0();
+
+  for (auto it = route.begin(); it != route.end(); it++) {
+    if( (*it)->reach_dm || (*it)->exact ) {
+      cvx = (*it)->exact_cvx;
+      continue;
+    }
+    if ( (*it)->prior != nullptr) {
+      EDGE e = (*it)->prior_edge;
+      guard_cvx(e, cvx);
+      if (cvx.is_empty()) return false; //{(*it)->valid=false; (*it)->clean_children(); return false;}
+      update_cvx(e, cvx);
+    }
+    Location * loc = com->get_a_location((*it)->label);
+    invar_cvx(loc, cvx);
+    if (cvx.is_empty()) return false; //{(*it)->valid=false; (*it)->clean_children(); return false;}
+    cvx.time_elapse_assign(loc->time_elapse_cvx);
+    invar_cvx(loc, cvx);
+    if (cvx.is_empty()) return false; //{(*it)->valid=false; (*it)->clean_children(); return false;}
+    (*it)->exact_cvx = cvx;
+    (*it)->reach_dm = true;
+    (*it)->exact = true;
+
+  }
+
+  return true;
+}
+    
+void Model::build_exact_cvx(shared_ptr<State> last)
+{
+  list<shared_ptr<State> > route;
+  route.insert(route.begin(),last);
+  while(route.front()->prior != nullptr) {
+    auto prior = route.front()->prior;
+    route.insert(route.begin(), prior);
+  }
+
+
+  C_Polyhedron cvx = base_cvx0();
+
+  for (auto it = route.begin(); it != route.end(); it++) {
+    if( (*it)->exact || (*it)->reach_dm ) {
+      cvx = (*it)->exact_cvx;
+      continue;
+    }
+    if ( (*it)->prior != nullptr) {
+      EDGE e = (*it)->prior_edge;
+      guard_cvx(e, cvx);
+      //if (cvx.is_empty()) {last->exact_cvx = cvx; return ;}
+      update_cvx(e, cvx);
+    }
+    Location * loc = com->get_a_location((*it)->label);
+    invar_cvx(loc, cvx);
+    //if (cvx.is_empty()) {last->exact_cvx = cvx; return ;}
+    cvx.time_elapse_assign(loc->time_elapse_cvx);
+    invar_cvx(loc, cvx);
+    //if (cvx.is_empty()) {last->exact_cvx = cvx; return ;}
+    (*it)->exact_cvx = cvx;
+    //(*it)->reach_dm = true;
+    (*it)->exact = true;
+
+  }
+  last->exact_cvx = cvx;
+  last->exact = true;
+  return;
+}
+
+void Model::restore_bad_paths(Octagonal_Shape<int32_t> poly)
+{
+    vector<Octagonal_Shape<int32_t>> tmp = bad_paths;
     bad_paths.clear();
     for ( unsigned i = 0; i < tmp.size(); i++) {
         if( poly.contains(tmp[i]))  continue;
@@ -1054,11 +1600,13 @@ void Model::sat() {
     if (! bp) {
       for( auto it = passing_map.begin(); it != passing_map.end(); it ++)
         for( auto iit = it->second->begin(); iit != it->second->end(); iit ++) {
+          if ( (*iit)->tmp)
+            it->second->erase(iit++);
           if ( !(*iit)->valid) {
             it->second->erase(iit++);
             continue;
           }
-          (*iit)->empty();
+          //(*iit)->empty();
         }
       for( auto it = next_map.begin(); it != next_map.end(); it ++)
         for( auto iit = it->second->begin(); iit != it->second->end(); iit ++) {
@@ -1078,13 +1626,16 @@ void Model::sat() {
     cout << " ------------------------------------ \n";
 }
 
-void Model::bf_psy()
+void Model::df()
 {
     int index = 0;
     cout << "step " << index++ << endl;
-    NNC_Polyhedron base = base_cvx();
+    Octagonal_Shape<int32_t> base = base_cvx();
     invar_cvx(com->init, base);
-    base.time_elapse_assign(com->init->time_elapse);
+    base.strong_closure_assign();
+    //base.time_elapse_assign(com->init->time_elapse);
+    time_elapse_assign(com->init->elapse, base);
+    base.strong_closure_assign();
     invar_cvx(com->init, base);
 
     if (base.is_empty())  {
@@ -1093,6 +1644,31 @@ void Model::bf_psy()
     }
      
     auto root = make_shared<pair_sc>(com->init->name, base, known_param_list,com->init->signature);
+    root->exact_cvx = base_cvx0();
+
+    depth_first(root);
+}
+
+void Model::bf_psy()
+{
+    int index = 0;
+    cout << "step " << index++ << endl;
+    Octagonal_Shape<int32_t> base = base_cvx();
+    invar_cvx(com->init, base);
+    base.strong_closure_assign();
+    //base.time_elapse_assign(com->init->time_elapse);
+    time_elapse_assign(com->init->elapse, base);
+    base.strong_closure_assign();
+    invar_cvx(com->init, base);
+
+    if (base.is_empty())  {
+      cout << "Empty initial states\n";
+      exit(0);
+    }
+     
+    auto root = make_shared<pair_sc>(com->init->name, base, known_param_list,com->init->signature);
+    root->exact_cvx = base_cvx0();
+    root->exact = true;
     passing_map.find(root->signature)->second->push_back(root);
 
 
@@ -1116,8 +1692,9 @@ void Model::print_log(string lname)
     streambuf *coutbuf = cout.rdbuf(); //save old buf
     cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
 
-    for (unsigned i = 0; i < passed.size(); i++)
-	passed[i].print();
+    for (auto it = passed_map.begin(); it != passed_map.end(); it++)
+      for ( auto iit = it->second->begin(); iit != it->second->end(); iit++)
+        (*iit)->print();
 
     cout.rdbuf(coutbuf);
   
@@ -1262,7 +1839,7 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 //{
 //    Path path;
 //    imi_swap_param(1);
-//	NNC_Polyhedron cvx = base_cvx();
+//	Octagonal_Shape<int32_t> cvx = base_cvx();
 //	path.push_back(pair_sc(com->init->name, cvx));
 //	if( cvx.is_empty()) {
 //		psy_an_unfeasible_path(path);
@@ -1282,7 +1859,7 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 //    int num_2v = num_v + num_rv;
 //    int dim = 2*num_2v + param_list.params.size() + 1;
 //    Location *l;
-//    NNC_Polyhedron poly;
+//    Octagonal_Shape<int32_t> poly;
 //
 //	l = com->get_a_location(path.sc_path.back().label);
 //	poly = path.sc_path.back().cvx;
@@ -1300,7 +1877,7 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 //                            it != l->outgoing.end(); it++) {
 //		string dest = it->dest;
 //		EDGE edge = *it;
-//		NNC_Polyhedron cvx = edge_cvx(edge, poly);
+//		Octagonal_Shape<int32_t> cvx = edge_cvx(edge, poly);
 //
 //		// An unfeasible path is found on the edge
 //		if( cvx.is_empty()) {
@@ -1358,14 +1935,14 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 ////    int num_2v = num_v + num_rv;
 ////    int dim = 2*num_2v + param_list.params.size() + 1;
 ////
-////    NNC_Polyhedron poly = base_cvx();
+////    Octagonal_Shape<int32_t> poly = base_cvx();
 ////
 ////    for( vector<EDGE>::const_iterator it = path.e_path.begin();
 ////                    it != path.e_path.end(); it++) {
 ////       string dest = it->dest;
 ////       EDGE edge = *it;
 ////
-////       NNC_Polyhedron cvx = edge_cvx(edge, poly);
+////       Octagonal_Shape<int32_t> cvx = edge_cvx(edge, poly);
 ////
 ////       poly = location_cvx(com->get_a_location(dest), &cvx);
 ////    }
@@ -1397,12 +1974,12 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 ////    int num_2v = num_v + num_rv;
 ////    int dim = 2*num_2v + param_list.params.size() + 1;
 ////
-////    NNC_Polyhedron poly = base_cvx();
+////    Octagonal_Shape<int32_t> poly = base_cvx();
 ////	
 ////	// The pre-unfeasible poly when there is only
 ////	// one edge.
 ////	if( path.e_path.size() == 1) {
-////		NNC_Polyhedron p = poly;
+////		Octagonal_Shape<int32_t> p = poly;
 ////	   	p.remove_higher_space_dimensions(num_p);
 ////		if( !p.is_empty())
 ////			if( ff_poly.is_empty())	ff_poly = p;	
@@ -1413,11 +1990,11 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 ////                    it != path.e_path.end(); it++) {
 ////		string dest = it->dest;
 ////       	EDGE edge = *it;
-////       	NNC_Polyhedron cvx = edge_cvx(edge, poly);
+////       	Octagonal_Shape<int32_t> cvx = edge_cvx(edge, poly);
 ////
 ////       	poly = location_cvx(com->get_a_location(dest), &cvx);
 ////       	if( it == path.e_path.end() - 2) {
-////       	    NNC_Polyhedron p = poly;
+////       	    Octagonal_Shape<int32_t> p = poly;
 ////    		p.remove_higher_space_dimensions(num_p);
 ////			if( !p.is_empty())
 ////				if( ff_poly.is_empty())	ff_poly = p;	
@@ -1454,8 +2031,8 @@ Location *com_2_locs(const Location *l1, const Location *l2, const Automaton *at
 //	cout << "e3 : " << e3 << endl;
 //	
 //    //vector<pair_sc> v;
-//    //pair_sc sc("haha", NNC_Polyhedron(2));
-//    //pair_sc sc2("haha", NNC_Polyhedron(2, EMPTY));
+//    //pair_sc sc("haha", Octagonal_Shape<int32_t>(2));
+//    //pair_sc sc2("haha", Octagonal_Shape<int32_t>(2, EMPTY));
 //    //v.push_back(sc2);
 //    //v.push_back(sc2);
 //    //v.push_back(sc);
